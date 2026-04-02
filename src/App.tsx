@@ -92,7 +92,7 @@ function HeroSection() {
             transition={{ type: 'spring', stiffness: 80, damping: 20, delay: 0.3 }}
             className="font-sans text-lg md:text-xl text-[var(--muted)] leading-relaxed text-balance"
           >
-            You've heard the buzzwords. Crypto. Web3. Smart Contracts. It sounds like a secret club hidden behind a wall of jargon. <strong className="text-[var(--fg)] font-medium">It isn't.</strong>
+            You've heard the buzzwords. Blockchain. Crypto. Web3. Smart Contracts. It sounds like a secret club hidden behind a wall of jargon. <strong className="text-[var(--fg)] font-medium">It isn't.</strong>
           </motion.p>
 
           <motion.div
@@ -111,7 +111,7 @@ function HeroSection() {
             >
               <span className="absolute inset-0 w-full h-full bg-[var(--accent)] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]" />
               <span className="relative font-mono text-sm uppercase tracking-widest font-semibold group-hover:text-[var(--accent-fg)] transition-colors duration-500">
-                Crack the Code
+                Learn More
               </span>
               <ArrowRight className="relative w-4 h-4 group-hover:text-[var(--accent-fg)] group-hover:translate-x-1 transition-all duration-500" />
             </motion.a>
