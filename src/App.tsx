@@ -101,7 +101,10 @@ function HeroSection() {
             transition={{ type: 'spring', stiffness: 80, damping: 20, delay: 0.5 }}
             className="flex flex-col items-start gap-4"
           >
-            <motion.button 
+            <motion.a 
+              href="https://forms.gle/hFLnk9EQAiepCSzS7"
+              target="_blank"
+              rel="noopener noreferrer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="group relative inline-flex items-center gap-4 bg-[var(--fg)] text-[var(--bg)] px-8 py-5 rounded-none overflow-hidden"
@@ -111,7 +114,7 @@ function HeroSection() {
                 Crack the Code
               </span>
               <ArrowRight className="relative w-4 h-4 group-hover:text-[var(--accent-fg)] group-hover:translate-x-1 transition-all duration-500" />
-            </motion.button>
+            </motion.a>
             
             <div className="font-mono text-xs text-[var(--muted)] flex items-center gap-3">
               <span className="flex h-2 w-2 rounded-full bg-[var(--accent)]" />
@@ -374,7 +377,10 @@ function CTASection() {
           8 Weeks. Live sessions. Zero cost. No barriers.
         </p>
 
-        <motion.button 
+        <motion.a 
+          href="https://forms.gle/hFLnk9EQAiepCSzS7"
+          target="_blank"
+          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="group relative inline-flex items-center justify-center bg-[var(--fg)] text-[var(--bg)] px-10 py-6 rounded-none overflow-hidden w-full sm:w-auto"
@@ -383,7 +389,7 @@ function CTASection() {
           <span className="relative font-mono text-sm md:text-base uppercase tracking-widest font-semibold group-hover:text-[var(--accent-fg)] transition-colors duration-500">
             Claim Your Spot in Blocknauts 1.0
           </span>
-        </motion.button>
+        </motion.a>
       </motion.div>
     </section>
   );
