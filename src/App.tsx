@@ -123,7 +123,7 @@ function HeroSection() {
               </div>
               <div className="font-mono text-xs text-[var(--fg)] flex items-center gap-3">
                 <span className="flex h-2 w-2 rounded-full border border-[var(--fg)]" />
-                Applications close April 30th — Starts May 3rd
+                Applications close April 30th — Program starts May 3rd
               </div>
             </div>
           </motion.div>
