@@ -116,9 +116,15 @@ function HeroSection() {
               <ArrowRight className="relative w-4 h-4 group-hover:text-[var(--accent-fg)] group-hover:translate-x-1 transition-all duration-500" />
             </motion.a>
             
-            <div className="font-mono text-xs text-[var(--muted)] flex items-center gap-3">
-              <span className="flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-              100% Free. Zero experience required. 8 Weeks to Career-Ready.
+            <div className="flex flex-col gap-3 mt-2">
+              <div className="font-mono text-xs text-[var(--muted)] flex items-center gap-3">
+                <span className="flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+                100% Free. Zero experience required. 8 Weeks to Career-Ready.
+              </div>
+              <div className="font-mono text-xs text-[var(--fg)] flex items-center gap-3">
+                <span className="flex h-2 w-2 rounded-full border border-[var(--fg)]" />
+                Applications close April 30th — Starts May 3rd
+              </div>
             </div>
           </motion.div>
         </div>
@@ -373,9 +379,18 @@ function CTASection() {
           <span className="italic text-[var(--muted)]">isn't waiting.</span>
         </h2>
         
-        <p className="font-mono text-sm md:text-base uppercase tracking-widest text-[var(--muted)] mb-16">
-          8 Weeks. Live sessions. Zero cost. No barriers.
-        </p>
+        <div className="flex flex-col items-center gap-6 mb-16">
+          <p className="font-mono text-sm md:text-base uppercase tracking-widest text-[var(--muted)]">
+            8 Weeks. Live sessions. Zero cost. No barriers.
+          </p>
+          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/5 text-[var(--fg)] font-mono text-xs uppercase tracking-widest">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]"></span>
+            </span>
+            Applications close April 30th • Starts May 3rd
+          </div>
+        </div>
 
         <motion.a 
           href="https://forms.gle/hFLnk9EQAiepCSzS7"
