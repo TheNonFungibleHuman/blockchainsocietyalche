@@ -56,22 +56,27 @@ function Navbar({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => voi
 function HeroSection() {
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
-  const y2 = useTransform(scrollY, [0, 1000], [0, -100]);
   const opacity = useTransform(scrollY, [0, 500], [1, 0]);
 
   return (
     <section className="relative min-h-[100svh] flex items-center px-[5vw] pt-24 pb-12 overflow-hidden">
-      {/* Background abstract elements */}
+      {/* Blocknauts Background */}
       <motion.div 
         style={{ y: y1, opacity }}
-        className="absolute top-1/4 right-[10vw] w-[40vw] h-[40vw] rounded-full border border-[var(--border)] opacity-20 pointer-events-none"
-      />
-      <motion.div 
-        style={{ y: y2, opacity }}
-        className="absolute bottom-1/4 left-[5vw] w-[20vw] h-[20vw] rounded-full border border-[var(--border)] opacity-20 pointer-events-none"
-      />
+        className="absolute inset-0 z-0 pointer-events-none"
+      >
+        <div className="absolute inset-0 bg-[var(--bg)]/80 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--bg)] z-10" />
+        <div className="absolute inset-0 z-10 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(var(--fg) 1px, transparent 1px), linear-gradient(90deg, var(--fg) 1px, transparent 1px)', backgroundSize: '4vw 4vw' }} />
+        <img 
+          src="https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=2000&auto=format&fit=crop" 
+          alt="Astronaut in space" 
+          className="w-full h-full object-cover grayscale opacity-60"
+          referrerPolicy="no-referrer"
+        />
+      </motion.div>
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-end w-full">
+      <div className="relative z-20 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-end w-full">
         <div className="lg:col-span-8">
           <motion.h1 
             initial={{ opacity: 0, y: 40 }}
@@ -379,10 +384,13 @@ function CTASection() {
           <span className="italic text-[var(--muted)]">isn't waiting.</span>
         </h2>
         
-        <div className="flex flex-col items-center gap-6 mb-16">
+        <div className="flex flex-col items-center gap-6 mb-16 w-full">
           <p className="font-mono text-sm md:text-base uppercase tracking-widest text-[var(--muted)]">
             8 Weeks. Live sessions. Zero cost. No barriers.
           </p>
+          
+          <CountdownTimer />
+
           <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/5 text-[var(--fg)] font-mono text-xs uppercase tracking-widest">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
@@ -423,6 +431,58 @@ function Footer() {
         <a href="#" className="hover:text-[var(--fg)] transition-colors">Terms</a>
       </div>
     </footer>
+  );
+}
+
+function CountdownTimer() {
+  const calculateTimeLeft = () => {
+    const difference = +new Date('2026-04-30T23:59:59') - +new Date();
+    let timeLeft: { [key: string]: number } = {};
+
+    if (difference > 0) {
+      timeLeft = {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60)
+      };
+    }
+    return timeLeft;
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timerKeys = Object.keys(timeLeft);
+
+  return (
+    <div className="flex items-center justify-center my-4 glass-panel p-6 md:p-8 w-full max-w-2xl mx-auto">
+      {timerKeys.length ? (
+        <div className="flex divide-x divide-[var(--border)] w-full justify-between">
+          {timerKeys.map((interval) => (
+            <div key={interval} className="flex flex-col items-center px-4 md:px-8 w-1/4">
+              <div className="font-mono text-3xl md:text-5xl font-light text-[var(--fg)] tracking-tighter">
+                {String(timeLeft[interval]).padStart(2, '0')}
+              </div>
+              <div className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-[var(--muted)] mt-2">
+                {interval}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="font-mono text-xl md:text-2xl text-[var(--fg)] uppercase tracking-widest font-medium flex items-center gap-4">
+          <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+          Applications Closed
+        </div>
+      )}
+    </div>
   );
 }
 
