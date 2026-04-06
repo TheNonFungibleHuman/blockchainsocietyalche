@@ -11,10 +11,8 @@
   --color-muted: #a1a1aa;
   --color-border: #e4e4e7;
   
-  --color-accent: #E2FF54;
-  --color-accent-foreground: #09090b;
-
-  /* Dark mode overrides will be handled via classes, but we can define semantic colors if needed */
+  --color-accent: #8b5cf6;
+  --color-accent-foreground: #ffffff;
 }
 
 @layer base {
@@ -23,8 +21,8 @@
     --fg: #09090b;
     --muted: #71717a;
     --border: #e4e4e7;
-    --accent: #E2FF54;
-    --accent-fg: #09090b;
+    --accent: #8b5cf6;
+    --accent-fg: #ffffff;
     --glass: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(0, 0, 0, 0.05);
   }
@@ -34,8 +32,8 @@
     --fg: #fafafa;
     --muted: #a1a1aa;
     --border: #27272a;
-    --accent: #E2FF54;
-    --accent-fg: #09090b;
+    --accent: #8b5cf6;
+    --accent-fg: #ffffff;
     --glass: rgba(5, 5, 5, 0.7);
     --glass-border: rgba(255, 255, 255, 0.05);
   }
@@ -65,4 +63,31 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .bg-accent-gradient {
+    background: linear-gradient(270deg, #3b82f6, #ef4444, #3b82f6);
+    background-size: 200% 200%;
+    animation: gradient-shift 4s ease infinite;
+  }
+
+  .text-accent-gradient {
+    background: linear-gradient(270deg, #3b82f6, #ef4444, #3b82f6);
+    background-size: 200% 200%;
+    animation: gradient-shift 4s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .border-accent-gradient {
+    border-image: linear-gradient(270deg, #3b82f6, #ef4444, #3b82f6) 1;
+    animation: gradient-shift 4s ease infinite;
+  }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }

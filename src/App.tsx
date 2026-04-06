@@ -15,6 +15,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen selection:bg-[var(--accent)] selection:text-[var(--accent-fg)] overflow-hidden">
+      <GradientDefs />
       <Navbar isDark={isDark} toggleDark={() => setIsDark(!isDark)} />
       
       <main>
@@ -39,7 +40,7 @@ function Navbar({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => voi
       className="fixed top-0 left-0 right-0 z-50 px-[5vw] py-6 flex justify-between items-center mix-blend-difference text-white"
     >
       <a href="#" aria-label="Home" className="flex items-center gap-3 group">
-        <Logo className="w-10 h-10 text-[var(--accent)] group-hover:rotate-90 transition-transform duration-1000 ease-in-out" />
+        <Logo className="w-10 h-10 [stroke:url(#accent-gradient)] group-hover:rotate-90 transition-transform duration-1000 ease-in-out" />
       </a>
       
       <button 
@@ -114,7 +115,7 @@ function HeroSection() {
               whileTap={{ scale: 0.98 }}
               className="group relative inline-flex items-center gap-4 bg-[var(--fg)] text-[var(--bg)] px-8 py-5 rounded-none overflow-hidden"
             >
-              <span className="absolute inset-0 w-full h-full bg-[var(--accent)] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]" />
+              <span className="absolute inset-0 w-full h-full bg-accent-gradient translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]" />
               <span className="relative font-mono text-sm uppercase tracking-widest font-semibold group-hover:text-[var(--accent-fg)] transition-colors duration-500">
                 Learn More
               </span>
@@ -123,7 +124,7 @@ function HeroSection() {
             
             <div className="flex flex-col gap-3 mt-2">
               <div className="font-mono text-xs text-[var(--muted)] flex items-center gap-3">
-                <span className="flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+                <span className="flex h-2 w-2 rounded-full bg-accent-gradient" />
                 100% Free. Zero experience required. 8 Weeks to Career-Ready.
               </div>
               <div className="font-mono text-xs text-[var(--fg)] flex items-center gap-3">
@@ -150,10 +151,10 @@ function RevealSection() {
           className="mb-16"
         >
           <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight mb-6">
-            Welcome to Blocknauts 1.0.
+            Welcome to Blocknauts<span className="text-accent-gradient">_</span>1.0.
           </h2>
           <div className="flex items-center gap-4 font-mono text-sm text-[var(--muted)] uppercase tracking-widest">
-            <Logo className="w-6 h-6 text-[var(--accent)] shrink-0" />
+            <Logo className="w-6 h-6 [stroke:url(#accent-gradient)] shrink-0" />
             <p>Brought to you by The Blockchain Society ALCHE.</p>
           </div>
         </motion.div>
@@ -180,7 +181,7 @@ function RevealSection() {
             <p className="font-sans text-lg leading-relaxed text-[var(--muted)]">
               ... But right now, the barrier to entry feels high, so we are changing that. We built Blocknauts 1.0 for the complete beginner.
             </p>
-            <div className="glass-panel p-6 border-l-4 border-l-[var(--accent)]">
+            <div className="glass-panel p-6 border-l-4 border-accent-gradient">
               <p className="font-mono text-sm leading-relaxed">
                 No trading advice. No get-rich-quick schemes. Just a pure, 8-week live bootcamp designed to take you from "I don't get what consensus mechanisms are" to pitching your own blockchain product.
               </p>
@@ -256,7 +257,7 @@ function JourneySection() {
           className="font-serif text-5xl md:text-7xl tracking-tighter"
         >
           Your 8-Week <br />
-          <span className="text-[var(--accent)] italic">Launchpad.</span>
+          <span className="text-accent-gradient italic">Launchpad.</span>
         </motion.h2>
       </div>
 
@@ -271,8 +272,8 @@ function JourneySection() {
             className="group relative flex flex-col"
           >
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-[var(--bg)]/20">
-              <span className="font-mono text-2xl text-[var(--accent)]">{week.num}</span>
-              <week.icon className="w-6 h-6 text-[var(--bg)]/40 group-hover:text-[var(--accent)] transition-colors duration-500" />
+              <span className="font-mono text-2xl text-accent-gradient">{week.num}</span>
+              <week.icon className="w-6 h-6 text-[var(--bg)]/40 group-hover:[stroke:url(#accent-gradient)] transition-colors duration-500" />
             </div>
             
             <h3 className="font-sans text-2xl font-medium mb-2">{week.title}</h3>
@@ -347,12 +348,13 @@ function ProofSection() {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ type: 'spring', stiffness: 80, damping: 20, delay: i * 0.1 }}
               whileHover={{ x: -10 }}
-              className="glass-panel p-8 md:p-10 flex flex-col sm:flex-row gap-6 sm:items-start group transition-all duration-500 hover:border-[var(--accent)]"
+              className="relative glass-panel p-8 md:p-10 flex flex-col sm:flex-row gap-6 sm:items-start group transition-all duration-500 overflow-hidden"
             >
-              <div className="mt-1 shrink-0">
-                <CheckCircle2 className="w-6 h-6 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors duration-500" />
+              <div className="absolute inset-0 bg-accent-gradient opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
+              <div className="mt-1 shrink-0 relative z-10">
+                <CheckCircle2 className="w-6 h-6 text-[var(--muted)] group-hover:[stroke:url(#accent-gradient)] transition-colors duration-500" />
               </div>
-              <div>
+              <div className="relative z-10">
                 <h4 className="font-sans text-xl font-medium mb-3">{item.title}</h4>
                 <p className="font-sans text-[var(--muted)] leading-relaxed">
                   {item.desc}
@@ -393,8 +395,8 @@ function CTASection() {
 
           <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/5 text-[var(--fg)] font-mono text-xs uppercase tracking-widest">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-gradient opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-gradient"></span>
             </span>
             Applications close April 30th • Starts May 3rd
           </div>
@@ -408,7 +410,7 @@ function CTASection() {
           whileTap={{ scale: 0.95 }}
           className="group relative inline-flex items-center justify-center bg-[var(--fg)] text-[var(--bg)] px-10 py-6 rounded-none overflow-hidden w-full sm:w-auto"
         >
-          <span className="absolute inset-0 w-full h-full bg-[var(--accent)] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]" />
+          <span className="absolute inset-0 w-full h-full bg-accent-gradient translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]" />
           <span className="relative font-mono text-sm md:text-base uppercase tracking-widest font-semibold group-hover:text-[var(--accent-fg)] transition-colors duration-500">
             Claim Your Spot in Blocknauts 1.0
           </span>
@@ -422,12 +424,13 @@ function Footer() {
   return (
     <footer className="px-[5vw] py-12 border-t border-[var(--border)] flex flex-col md:flex-row justify-between items-center gap-6">
       <div className="flex items-center gap-3 font-mono text-xs text-[var(--muted)] uppercase tracking-widest">
-        <Logo className="w-5 h-5 text-[var(--accent)] shrink-0" />
+        <Logo className="w-5 h-5 [stroke:url(#accent-gradient)] shrink-0" />
         <span>© {new Date().getFullYear()} The Blockchain Society ALCHE.</span>
       </div>
       <div className="flex gap-6 font-mono text-xs text-[var(--muted)] uppercase tracking-widest">
-        <a href="#" className="hover:text-[var(--fg)] transition-colors">Twitter</a>
-        <a href="#" className="hover:text-[var(--fg)] transition-colors">Discord</a>
+        <a href="https://x.com/@tbsalche" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--fg)] transition-colors">Twitter</a>
+        <a href="https://instagram.com/@tbsalche" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--fg)] transition-colors">Instagram</a>
+        <a href="https://www.linkedin.com/company/the-blockchain-society-alche/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--fg)] transition-colors">LinkedIn</a>
         <a href="#" className="hover:text-[var(--fg)] transition-colors">Terms</a>
       </div>
     </footer>
@@ -488,13 +491,30 @@ function CountdownTimer() {
 
 function Logo({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" className={className} fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2">
+    <svg viewBox="0 0 100 100" className={className} fill="none" strokeWidth="0.5" strokeDasharray="2 2">
       {[...Array(12)].map((_, i) => {
         const angle = (i * Math.PI) / 6;
         const cx = 50 + Math.cos(angle) * 16;
         const cy = 50 + Math.sin(angle) * 16;
         return <circle key={i} cx={cx} cy={cy} r={28} />
       })}
+    </svg>
+  );
+}
+
+function GradientDefs() {
+  return (
+    <svg width="0" height="0" className="absolute pointer-events-none">
+      <defs>
+        <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3b82f6">
+            <animate attributeName="stop-color" values="#3b82f6; #ef4444; #3b82f6" dur="4s" repeatCount="indefinite" />
+          </stop>
+          <stop offset="100%" stopColor="#ef4444">
+            <animate attributeName="stop-color" values="#ef4444; #3b82f6; #ef4444" dur="4s" repeatCount="indefinite" />
+          </stop>
+        </linearGradient>
+      </defs>
     </svg>
   );
 }
