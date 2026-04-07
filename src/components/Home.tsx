@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo, GeometricText } from './Logo';
 
 export default function Home() {
   useEffect(() => {
@@ -34,22 +35,14 @@ function Navbar() {
   return (
     <nav className="relative z-50 flex flex-row justify-between items-center px-6 md:px-8 py-6 max-w-7xl mx-auto w-full">
       <div className="flex items-center gap-2 md:gap-4 text-[var(--fg)]">
-        <svg width="40" height="40" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 1.5" className="opacity-80 md:w-12 md:h-12">
-          <circle cx="50" cy="30" r="20" />
-          <circle cx="64.1" cy="35.9" r="20" />
-          <circle cx="70" cy="50" r="20" />
-          <circle cx="64.1" cy="64.1" r="20" />
-          <circle cx="50" cy="70" r="20" />
-          <circle cx="35.9" cy="64.1" r="20" />
-          <circle cx="30" cy="50" r="20" />
-          <circle cx="35.9" cy="35.9" r="20" />
-        </svg>
-        <div className="hidden md:flex font-serif tracking-[0.12em] uppercase items-baseline leading-[23px] w-[340px] -ml-[11px]">
-          <span className="text-lg">T</span><span className="text-xs">HE</span>
-          <span className="text-lg ml-2">B</span><span className="text-xs">LOCKCHAIN</span>
-          <span className="text-lg ml-2">S</span><span className="text-xs">OCIETY</span>
-          <span className="text-lg ml-2">A</span><span className="text-xs">LCHE</span>
-        </div>
+        <Link to="/" aria-label="Home" className="flex items-center gap-4 group">
+          <Logo className="w-10 h-10 stroke-[var(--fg)] animate-[spin_10s_linear_infinite] shrink-0" />
+          <div className="hidden md:block overflow-hidden whitespace-nowrap">
+            <span className="font-serif tracking-[0.12em] uppercase text-sm">
+              <GeometricText text="THE BLOCKCHAIN SOCIETY ALCHE" />
+            </span>
+          </div>
+        </Link>
       </div>
       
       {/* Desktop Navigation */}
@@ -118,7 +111,7 @@ function Hero() {
       </h1>
       
       <p className="text-[var(--muted-fg)] text-[13px] max-w-2xl mt-6 leading-relaxed animate-fade-rise-delay">
-        Cultivating a vibrant, inclusive community of blockchain builders from The African Leadership College Of Higher Education to the world. We equip students and individuals with blockchain education, skills, research, and networks to be able to innovate, create and lead in the blockchain space in Mauritius, across Africa, and beyond.
+        Cultivating a vibrant, inclusive community of blockchain builders from ALCHE to the world. We equip students and individuals with blockchain education, skills, research, and networks to be able to innovate, create and lead in the blockchain space in Mauritius, across Africa, and beyond.
       </p>
       
       <button className="liquid-glass rounded-full px-8 py-3 text-sm text-[var(--fg)] mt-10 hover:scale-[1.03] transition-transform cursor-pointer animate-fade-rise-delay-2">

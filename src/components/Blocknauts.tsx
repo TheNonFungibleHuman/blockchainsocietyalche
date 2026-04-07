@@ -32,7 +32,13 @@ export default function Blocknauts() {
   );
 }
 
+import { Logo, GeometricText } from './Logo';
+
 function Navbar({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => void }) {
+  const { scrollY } = useScroll();
+  const textOpacity = useTransform(scrollY, [0, 100], [1, 0]);
+  const textWidth = useTransform(scrollY, [0, 100], [350, 0]);
+
   return (
     <motion.nav 
       initial={{ y: -100, opacity: 0 }}
@@ -41,13 +47,17 @@ function Navbar({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => voi
       className="fixed top-0 left-0 right-0 z-50 px-[5vw] py-6 flex justify-between items-center mix-blend-difference text-white"
     >
       <div className="flex items-center gap-6">
-        <Link to="/" aria-label="Back to Society" className="flex items-center gap-2 text-sm font-mono uppercase tracking-widest hover:text-[var(--accent)] transition-colors group">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back
+        <Link to="/" aria-label="Home" className="flex items-center gap-4 group">
+          <Logo className="w-10 h-10 [stroke:url(#accent-gradient)] animate-[spin_10s_linear_infinite] shrink-0" />
+          <motion.div 
+            style={{ opacity: textOpacity, width: textWidth }}
+            className="overflow-hidden whitespace-nowrap hidden md:block"
+          >
+            <span className="font-serif tracking-[0.12em] uppercase text-sm">
+              <GeometricText text="THE BLOCKCHAIN SOCIETY ALCHE" />
+            </span>
+          </motion.div>
         </Link>
-        <a href="#" aria-label="Home" className="flex items-center gap-3 group">
-          <Logo className="w-10 h-10 [stroke:url(#accent-gradient)] group-hover:rotate-90 transition-transform duration-1000 ease-in-out" />
-        </a>
       </div>
       
       <button 
@@ -188,7 +198,7 @@ function RevealSection() {
             <p className="font-sans text-lg leading-relaxed text-[var(--muted)]">
               ... But right now, the barrier to entry feels high, so we are changing that. We built Blocknauts 1.0 for the complete beginner.
             </p>
-            <div className="glass-panel p-6">
+            <div className="glass-panel p-6 border-l-4 border-accent-gradient">
               <p className="font-mono text-sm leading-relaxed">
                 No trading advice. No get-rich-quick schemes. Just a pure, 8-week live bootcamp designed to take you from "I don't get what consensus mechanisms are" to pitching your own blockchain product.
               </p>
@@ -431,7 +441,7 @@ function Footer() {
   return (
     <footer className="px-[5vw] py-12 border-t border-[var(--border)] flex flex-col md:flex-row justify-between items-center gap-6">
       <div className="flex items-center gap-3 font-mono text-xs text-[var(--muted)] uppercase tracking-widest">
-        <Logo className="w-5 h-5 [stroke:url(#accent-gradient)] shrink-0" />
+        <Logo className="w-5 h-5 [stroke:url(#accent-gradient)] shrink-0 animate-[spin_10s_linear_infinite]" />
         <span>© {new Date().getFullYear()} The Blockchain Society ALCHE.</span>
       </div>
       <div className="flex gap-6 font-mono text-xs text-[var(--muted)] uppercase tracking-widest">
@@ -493,19 +503,6 @@ function CountdownTimer() {
         </div>
       )}
     </div>
-  );
-}
-
-function Logo({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} fill="none" strokeWidth="0.5" strokeDasharray="2 2">
-      {[...Array(12)].map((_, i) => {
-        const angle = (i * Math.PI) / 6;
-        const cx = 50 + Math.cos(angle) * 16;
-        const cy = 50 + Math.sin(angle) * 16;
-        return <circle key={i} cx={cx} cy={cy} r={28} />
-      })}
-    </svg>
   );
 }
 
