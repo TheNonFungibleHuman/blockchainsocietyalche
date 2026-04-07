@@ -47,15 +47,23 @@ function Navbar() {
       
       {/* Desktop Navigation */}
       <div className="hidden md:flex items-center gap-8">
-        <a href="#" className="text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors">Research</a>
-        
         <div className="relative group py-2">
-          <button className="text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors flex items-center gap-1">
-            Learn <ChevronDown className="w-4 h-4" />
+          <button className="text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors flex items-center gap-1 cursor-pointer">
+            Programs <ChevronDown className="w-4 h-4" />
           </button>
           <div className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-[var(--border)] bg-black/80 backdrop-blur-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col overflow-hidden">
             <Link to="/blocknauts" className="px-4 py-3 text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] hover:bg-white/10 transition-colors">Blocknauts</Link>
+          </div>
+        </div>
+
+        <div className="relative group py-2">
+          <button className="text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] transition-colors flex items-center gap-1 cursor-pointer">
+            Learn <ChevronDown className="w-4 h-4" />
+          </button>
+          <div className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-[var(--border)] bg-black/80 backdrop-blur-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col overflow-hidden">
+            <a href="#" className="px-4 py-3 text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] hover:bg-white/10 transition-colors">Blog</a>
             <a href="#" className="px-4 py-3 text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] hover:bg-white/10 transition-colors">Glossary</a>
+            <a href="#" className="px-4 py-3 text-sm text-[var(--muted-fg)] hover:text-[var(--fg)] hover:bg-white/10 transition-colors">Games</a>
           </div>
         </div>
         
@@ -63,7 +71,7 @@ function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="liquid-glass rounded-full px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm text-[var(--fg)] hover:scale-[1.03] transition-transform">
+        <button className="liquid-glass rounded-full px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm text-[var(--fg)] hover:scale-[1.03] transition-transform cursor-pointer">
           Join Us
         </button>
         
@@ -86,15 +94,19 @@ function Navbar() {
             <X className="w-8 h-8" />
           </button>
           
-          <a href="#" className="text-2xl font-serif text-[var(--fg)]" onClick={() => setIsMenuOpen(false)}>Research</a>
           <div className="flex flex-col items-center gap-4">
-            <span className="text-sm uppercase tracking-widest text-[var(--muted-fg)]">Learn</span>
+            <span className="text-sm uppercase tracking-widest text-[var(--muted-fg)] cursor-pointer">Programs</span>
             <Link to="/blocknauts" className="text-2xl font-serif text-[var(--fg)]" onClick={() => setIsMenuOpen(false)}>Blocknauts</Link>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <span className="text-sm uppercase tracking-widest text-[var(--muted-fg)] cursor-pointer">Learn</span>
+            <a href="#" className="text-2xl font-serif text-[var(--fg)]" onClick={() => setIsMenuOpen(false)}>Blog</a>
             <a href="#" className="text-2xl font-serif text-[var(--fg)]" onClick={() => setIsMenuOpen(false)}>Glossary</a>
+            <a href="#" className="text-2xl font-serif text-[var(--fg)]" onClick={() => setIsMenuOpen(false)}>Games</a>
           </div>
           <a href="#" className="text-2xl font-serif text-[var(--fg)]" onClick={() => setIsMenuOpen(false)}>About</a>
           
-          <button className="liquid-glass rounded-full px-10 py-4 text-lg text-[var(--fg)] mt-4">
+          <button className="liquid-glass rounded-full px-10 py-4 text-lg text-[var(--fg)] mt-4 cursor-pointer">
             Join Us
           </button>
         </div>
