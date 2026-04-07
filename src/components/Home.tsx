@@ -118,7 +118,7 @@ function Hero() {
       </h1>
       
       <p className="text-[var(--muted-fg)] text-[13px] max-w-2xl mt-6 leading-relaxed animate-fade-rise-delay">
-        Cultivating a vibrant, inclusive community of blockchain builders from ALCHE to the world. We equip students and individuals with blockchain education, skills, research, and networks to be able to innovate, create and lead in the blockchain space in Mauritius, across Africa, and beyond.
+        Cultivating a vibrant, inclusive community of blockchain builders from The African Leadership College Of Higher Education to the world. We equip students and individuals with blockchain education, skills, research, and networks to be able to innovate, create and lead in the blockchain space in Mauritius, across Africa, and beyond.
       </p>
       
       <button className="liquid-glass rounded-full px-8 py-3 text-sm text-[var(--fg)] mt-10 hover:scale-[1.03] transition-transform cursor-pointer animate-fade-rise-delay-2">
