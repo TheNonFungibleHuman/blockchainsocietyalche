@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Moon, Sun, ArrowRight, CheckCircle2, Code2, Cpu, Globe, Layers, Shield, Zap, Rocket, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo, GeometricText } from './Logo';
 
 export default function Blocknauts() {
   const [isDark, setIsDark] = useState(true);
@@ -31,8 +32,6 @@ export default function Blocknauts() {
     </div>
   );
 }
-
-import { Logo, GeometricText } from './Logo';
 
 function Navbar({ isDark, toggleDark }: { isDark: boolean; toggleDark: () => void }) {
   const { scrollY } = useScroll();
