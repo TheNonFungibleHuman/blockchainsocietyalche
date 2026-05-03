@@ -80,7 +80,7 @@ export default function Leaderboard() {
           <div className="text-[10px] font-bold text-zinc-500 mb-4 uppercase tracking-[0.4em]">Strategic Standings</div>
           <h1 className="font-serif text-6xl md:text-8xl tracking-tight leading-none mb-8">Global Rankings</h1>
           <p className="text-zinc-500 max-w-xl mx-auto text-lg leading-relaxed text-balance">
-            Validated proof of expertise within the Blocknauts ecosystem. Synchronizing performance data across the decentralized network.
+            Validated proof of expertise within the Blocknauts ecosystem
           </p>
         </div>
 
