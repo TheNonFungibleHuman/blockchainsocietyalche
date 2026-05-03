@@ -8,7 +8,8 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      // API keys should NEVER be defined here as they will be leaked to the browser.
+      // Use VITE_ prefix for public vars or a backend for secrets.
     },
     resolve: {
       alias: {
