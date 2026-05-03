@@ -4,13 +4,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // ===============================================================
-    // PILLAR 0: Global Safety Net
-    // ===============================================================
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // ===============================================================
     // Helper Functions
     // ===============================================================
     
@@ -20,12 +13,6 @@ service cloud.firestore {
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return isSignedIn() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        (request.auth.token.email == "thenfh2022@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isValidId(id) {
@@ -45,12 +32,11 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email', 'xp', 'role', 'createdAt']) &&
-             data.keys().size() <= 20 && // Increased limit for flexibility
+      return data.keys().hasAll(['uid', 'email', 'xp', 'createdAt']) &&
+             data.keys().size() <= 30 && 
              data.uid is string && data.uid.size() > 0 && data.uid.size() < 100 &&
              data.email is string && data.email.size() < 150 &&
              data.xp is number && data.xp >= 0 &&
-             data.role in ['user', 'admin'] &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
              (!('country' in data) || (data.country is string && data.country.size() <= 100)) &&
              (!('welcomeWatched' in data) || (data.welcomeWatched is bool)) &&
@@ -65,48 +51,13 @@ service cloud.firestore {
     // ===============================================================
     
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin(); // Users cannot list other users
-
-      allow create: if isOwner(userId) && 
-                    isValidUser(incoming()) &&
-                    incoming().uid == request.auth.uid &&
-                    incoming().createdAt == request.time &&
-                    (incoming().role == 'user' || isAdmin()); // Prevents self-promotion to admin
-
-      allow update: if isOwner(userId) && 
-                    isValidUser(incoming()) &&
-                    // Action: Progression (Allowed fields that change during learning)
-                    (
-                      incoming().diff(existing()).affectedKeys().hasOnly(['xp', 'completedPages', 'completedModules', 'quizStates', 'welcomeWatched', 'displayName', 'photoURL', 'country']) ||
-                      isAdmin() // Admins can fix anything
-                    ) &&
-                    // PILLAR 9: Immortal Fields
-                    incoming().uid == existing().uid &&
-                    incoming().email == existing().email &&
-                    incoming().createdAt == existing().createdAt &&
-                    (incoming().role == existing().role || isAdmin());
-                    
-      allow delete: if isAdmin();
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidUser(incoming());
     }
 
-    // ===============================================================
-    // Collection: Public Profiles (Leaderboard)
-    // ===============================================================
-
     match /public_profiles/{userId} {
-      // PILLAR 8: Secure List Queries (Explicit check on data fields if needed)
       allow read: if true; 
-      
-      allow create, update: if isOwner(userId) && 
-                   incoming().keys().hasAll(['xp']) &&
-                   incoming().xp is number &&
-                   incoming().xp >= 0 &&
-                   // Prevent identity spoofing
-                   (!('displayName' in incoming()) || incoming().displayName is string) &&
-                   (!('photoURL' in incoming()) || (incoming().photoURL is string && incoming().photoURL.size() <= 1000));
-
-      allow delete: if isAdmin();
+      allow write: if isOwner(userId);
     }
   }
 }

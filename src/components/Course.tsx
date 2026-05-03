@@ -76,60 +76,70 @@ export default function Course() {
   // Sync local state with Firebase profile on load
   useEffect(() => {
     if (profile) {
-      setCompletedPages(profile.completedPages || []);
+      // Use local state if it matches or if we just synced
+      const profilePages = profile.completedPages || [];
+      if (JSON.stringify(profilePages) !== JSON.stringify(completedPages)) {
+        setCompletedPages(profilePages);
+      }
       
       // Hardcode XP to 0 for tester account
       if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
-        setUserXP(0);
+        if (userXP !== 0) setUserXP(0);
         if (profile.xp !== 0) {
           updateFirebaseProfile({ xp: 0 });
         }
       } else {
-        setUserXP(profile.xp || 0);
+        if (userXP !== profile.xp) setUserXP(profile.xp || 0);
       }
 
       try {
         if (profile.quizStates) {
-          setQuizStates(JSON.parse(profile.quizStates));
+          const parsed = JSON.parse(profile.quizStates);
+          if (JSON.stringify(parsed) !== JSON.stringify(quizStates)) {
+            setQuizStates(parsed);
+          }
         }
       } catch (e) {
         console.error("Failed to parse quiz states", e);
       }
+    } else if (!authLoading && !user) {
+      // Fallback for unauthenticated users (demo mode)
+      if (userXP === 0) setUserXP(140);
+    }
+  }, [profile, user, authLoading]); 
 
-      // Resume logic: Jump to the most recently completed page if we haven't already
-      if (!hasResumed.current && profile.completedPages && profile.completedPages.length > 0) {
-        hasResumed.current = true;
+
+  // Resume logic: Jump to the most recently completed page if we haven't already
+  useEffect(() => {
+    if (profile && !hasResumed.current && profile.completedPages && profile.completedPages.length > 0) {
+      hasResumed.current = true;
+      
+      let maxIndex = -1;
+      allPages.forEach((page, index) => {
+        const globalId = page.moduleId ? `${page.moduleId}-${page.pageId}` : page.pageId;
+        if (profile.completedPages?.includes(globalId) || profile.completedPages?.includes(page.pageId)) {
+          maxIndex = index;
+        }
+      });
+
+      if (maxIndex !== -1) {
+        const lastPage = allPages[maxIndex];
+        // Determine the first page ID to check if we are still at the start
+        const firstPageId = (courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id;
         
-        let maxIndex = -1;
-        allPages.forEach((page, index) => {
-          const globalId = page.moduleId ? `${page.moduleId}-${page.pageId}` : page.pageId;
-          if (profile.completedPages?.includes(globalId) || profile.completedPages?.includes(page.pageId)) {
-            maxIndex = index;
-          }
-        });
-
-        if (maxIndex !== -1) {
-          const lastPage = allPages[maxIndex];
-          // Determine the first page ID to check if we are still at the start
-          const firstPageId = (courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id;
+        if (activePage === firstPageId) {
+          setActivePart(lastPage.partId);
+          setActiveModule(lastPage.moduleId);
+          setActivePage(lastPage.pageId);
           
-          if (activePage === firstPageId) {
-            setActivePart(lastPage.partId);
-            setActiveModule(lastPage.moduleId);
-            setActivePage(lastPage.pageId);
-            
-            // Expand the part containing the page
-            if (lastPage.partId && !expandedParts.includes(lastPage.partId)) {
-              setExpandedParts(prev => [...prev, lastPage.partId]);
-            }
+          // Expand the part containing the page
+          if (lastPage.partId && !expandedParts.includes(lastPage.partId)) {
+            setExpandedParts(prev => [...prev, lastPage.partId]);
           }
         }
       }
-    } else {
-      // Fallback for unauthenticated users (demo mode)
-      setUserXP(140);
     }
-  }, [profile, user?.email, allPages, activePage, expandedParts]);
+  }, [profile, allPages, activePage, expandedParts]); // Keep activePage to know if we are at start
 
   // Helper to update Firebase
   const updateFirebaseProfile = async (updates: any) => {
@@ -683,12 +693,12 @@ export default function Course() {
                       key={(currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
-                      src={`https://www.youtube-nocookie.com/embed/${(currentPageData as any).youtubeId}`} 
+                      src={`https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?rel=0`} 
                       title={currentPageData.title}
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                       allowFullScreen
-                      referrerPolicy="no-referrer"
+                      referrerPolicy="strict-origin-when-cross-origin"
                       onLoad={() => setVideoLoading(false)}
                       className="relative z-0"
                     ></iframe>

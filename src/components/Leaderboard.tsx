@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, TrendUp, Globe, CaretLeft, Trash } from '@phosphor-icons/react';
+import { Trophy, Medal, TrendUp, Globe, CaretLeft } from '@phosphor-icons/react';
 import Navbar from './Navbar';
 import { db } from '../firebase';
-import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, profile } = useAuth();
-
-  const isAdmin = profile?.role === 'admin' || user?.email === 'thenfh2022@gmail.com';
+  const { user } = useAuth();
 
   const fetchLeaderboard = async () => {
     try {
@@ -53,24 +51,6 @@ export default function Leaderboard() {
   useEffect(() => {
     fetchLeaderboard();
   }, [user]);
-
-  const handleDeleteEntry = async (uid: string) => {
-    if (!window.confirm("Are you sure you want to remove this operative from the records? This will delete their leaderboard presence.")) return;
-    
-    try {
-      // Delete from both collections to be safe
-      await Promise.all([
-        deleteDoc(doc(db, 'public_profiles', uid)),
-        deleteDoc(doc(db, 'users', uid))
-      ]);
-      
-      // Refresh list
-      setLeaderboard(prev => prev.filter(u => u.id !== uid));
-    } catch (error) {
-      console.error("Error deleting record:", error);
-      alert("Failed to delete record. You might not have permission.");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
@@ -186,18 +166,6 @@ export default function Leaderboard() {
                     <div className="w-32 text-right flex items-center justify-end gap-3 relative z-10">
                       <span className="font-serif text-3xl tabular-nums">{u.xp}</span>
                       <div className="flex flex-col items-end">
-                        {isAdmin && !u.isUser && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteEntry(u.id);
-                            }}
-                            className="text-red-500/50 hover:text-red-500 p-1 transition-colors"
-                            title="Remove Ghost Operative"
-                          >
-                            <Trash size={14} weight="bold" />
-                          </button>
-                        )}
                         <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest leading-none mb-1">Status</span>
                         {u.trend === 'up' && <TrendUp size={14} weight="bold" className="text-emerald-500 animate-bounce" />}
                       </div>

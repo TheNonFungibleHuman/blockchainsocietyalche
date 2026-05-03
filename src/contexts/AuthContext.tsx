@@ -12,7 +12,6 @@ interface UserProfile {
   completedPages: string[];
   completedModules: string[];
   quizStates: string;
-  role: string;
   createdAt: string;
   country?: string;
   welcomeWatched?: boolean;
@@ -74,7 +73,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               completedPages: [],
               completedModules: [],
               quizStates: '{}',
-              role: 'user',
               createdAt: new Date().toISOString(),
               country: 'Global',
               welcomeWatched: false
