@@ -23,7 +23,13 @@ export default function Course() {
   const [activePage, setActivePage] = useState<string>((courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const hasResumed = useRef(false);
   
+  // UI State
+  const [isDark, setIsDark] = useState(true);
+  const [expandedParts, setExpandedParts] = useState<string[]>([courseData.parts[0].id]);
+  const [rightPaneTab, setRightPaneTab] = useState<'glossary' | 'resources' | 'leaderboard' | null>(null);
+
   // Progress & Gamification State (Local state synced with Firebase)
   const [completedPages, setCompletedPages] = useState<string[]>([]);
   const [userXP, setUserXP] = useState(0); 
@@ -89,11 +95,41 @@ export default function Course() {
       } catch (e) {
         console.error("Failed to parse quiz states", e);
       }
+
+      // Resume logic: Jump to the most recently completed page if we haven't already
+      if (!hasResumed.current && profile.completedPages && profile.completedPages.length > 0) {
+        hasResumed.current = true;
+        
+        let maxIndex = -1;
+        allPages.forEach((page, index) => {
+          const globalId = page.moduleId ? `${page.moduleId}-${page.pageId}` : page.pageId;
+          if (profile.completedPages?.includes(globalId) || profile.completedPages?.includes(page.pageId)) {
+            maxIndex = index;
+          }
+        });
+
+        if (maxIndex !== -1) {
+          const lastPage = allPages[maxIndex];
+          // Determine the first page ID to check if we are still at the start
+          const firstPageId = (courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id;
+          
+          if (activePage === firstPageId) {
+            setActivePart(lastPage.partId);
+            setActiveModule(lastPage.moduleId);
+            setActivePage(lastPage.pageId);
+            
+            // Expand the part containing the page
+            if (lastPage.partId && !expandedParts.includes(lastPage.partId)) {
+              setExpandedParts(prev => [...prev, lastPage.partId]);
+            }
+          }
+        }
+      }
     } else {
       // Fallback for unauthenticated users (demo mode)
       setUserXP(140);
     }
-  }, [profile, user?.email]);
+  }, [profile, user?.email, allPages, activePage, expandedParts]);
 
   // Helper to update Firebase
   const updateFirebaseProfile = async (updates: any) => {
@@ -149,11 +185,6 @@ export default function Course() {
     });
   };
   
-  // UI State
-  const [isDark, setIsDark] = useState(true);
-  const [expandedParts, setExpandedParts] = useState<string[]>([courseData.parts[0].id]);
-  const [rightPaneTab, setRightPaneTab] = useState<'glossary' | 'resources' | 'leaderboard' | null>(null);
-
   // Sync dark mode
   useEffect(() => {
     if (isDark) {
