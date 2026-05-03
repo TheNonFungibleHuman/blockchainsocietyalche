@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Circle, BookOpen, PlayCircle, LockKey, CaretRight, CaretLeft, CaretDown, BookBookmark, Trophy, FileText, X as XIcon, ArrowRight, Shield, List } from '@phosphor-icons/react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { courseData } from '../data/courseData';
 import Navbar from './Navbar';
@@ -16,37 +16,11 @@ import EscrowSimulator from './demos/EscrowSimulator';
 
 export default function Course() {
   const { user, profile, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Redirect on reload
-  useEffect(() => {
-    const perfEntries = performance.getEntriesByType('navigation');
-    if (perfEntries.length > 0 && (perfEntries[0] as any).type === 'reload') {
-      console.warn("Reload detected on course page, redirecting to academy landing");
-      navigate('/learn', { replace: true });
-    }
-  }, [navigate]);
-
-  // Flattened pages for robust forward/back navigation
-  const allPages = useMemo(() => {
-    const introPages = (courseData as any).introduction?.map((page: any) => ({ partId: null, moduleId: null, pageId: page.id })) || [];
-    const mainPages = courseData.parts?.flatMap(p => 
-      p.modules?.flatMap(m => 
-        m.pages?.map(page => ({ partId: p.id, moduleId: m.id, pageId: page.id })) || []
-      ) || []
-    ) || [];
-    return [...introPages, ...mainPages];
-  }, []);
 
   // Navigation State
-  const initialPageId = searchParams.get('page');
-  const initialModuleId = searchParams.get('module');
-  const initialPartId = searchParams.get('part');
-
-  const [activePart, setActivePart] = useState<string | null>(initialPartId || ((courseData as any).introduction?.[0] ? null : courseData.parts[0].id));
-  const [activeModule, setActiveModule] = useState<string | null>(initialModuleId || ((courseData as any).introduction?.[0] ? null : courseData.parts[0].modules[0].id));
-  const [activePage, setActivePage] = useState<string>(initialPageId || (courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id);
+  const [activePart, setActivePart] = useState<string | null>((courseData as any).introduction?.[0] ? null : courseData.parts[0].id);
+  const [activeModule, setActiveModule] = useState<string | null>((courseData as any).introduction?.[0] ? null : courseData.parts[0].modules[0].id);
+  const [activePage, setActivePage] = useState<string>((courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
@@ -57,6 +31,17 @@ export default function Course() {
   const [videoLoading, setVideoLoading] = useState(true);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Flattened pages for robust forward/back navigation
+  const allPages = useMemo(() => {
+    const introPages = (courseData as any).introduction?.map(page => ({ partId: null, moduleId: null, pageId: page.id })) || [];
+    const mainPages = courseData.parts?.flatMap(p => 
+      p.modules?.flatMap(m => 
+        m.pages?.map(page => ({ partId: p.id, moduleId: m.id, pageId: page.id })) || []
+      ) || []
+    ) || [];
+    return [...introPages, ...mainPages];
+  }, []);
 
   // Derived Data
   const currentPartData = useMemo(() => courseData.parts.find(p => p.id === activePart), [activePart]);
@@ -68,13 +53,7 @@ export default function Course() {
     return currentModuleData?.pages.find(p => p.id === activePage);
   }, [currentModuleData, activeModule, activePage]);
 
-  // Update URL search params whenever page changes
-  useEffect(() => {
-    const params: Record<string, string> = { page: activePage };
-    if (activeModule) params.module = activeModule;
-    if (activePart) params.part = activePart;
-    setSearchParams(params, { replace: true });
-  }, [activePage, activeModule, activePart, setSearchParams]);
+  const currentIndex = allPages.findIndex(p => p.moduleId === activeModule && p.pageId === activePage);
 
   // Scroll to top and handle video loading on page change
   useEffect(() => {
@@ -673,11 +652,12 @@ export default function Course() {
                       key={(currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
-                      src={`https://www.youtube-nocookie.com/embed/${(currentPageData as any).youtubeId}?autoplay=0&rel=0`} 
+                      src={`https://www.youtube-nocookie.com/embed/${(currentPageData as any).youtubeId}`} 
                       title={currentPageData.title}
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                       allowFullScreen
+                      referrerPolicy="no-referrer"
                       onLoad={() => setVideoLoading(false)}
                       className="relative z-0"
                     ></iframe>
