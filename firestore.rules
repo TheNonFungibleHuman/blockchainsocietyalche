@@ -98,13 +98,15 @@ service cloud.firestore {
       // PILLAR 8: Secure List Queries (Explicit check on data fields if needed)
       allow read: if true; 
       
-      allow write: if isOwner(userId) && 
+      allow create, update: if isOwner(userId) && 
                    incoming().keys().hasAll(['xp']) &&
                    incoming().xp is number &&
                    incoming().xp >= 0 &&
                    // Prevent identity spoofing
                    (!('displayName' in incoming()) || incoming().displayName is string) &&
                    (!('photoURL' in incoming()) || (incoming().photoURL is string && incoming().photoURL.size() <= 1000));
+
+      allow delete: if isAdmin();
     }
   }
 }
