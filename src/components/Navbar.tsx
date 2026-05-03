@@ -110,7 +110,9 @@ export default function Navbar() {
             <div className="absolute top-full right-0 mt-2 w-48 rounded-xl border border-[var(--border)] bg-black/80 backdrop-blur-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 flex flex-col overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--border)]">
                 <p className="text-sm font-medium text-white truncate">{profile?.displayName || 'My Profile'}</p>
-                <p className="text-xs text-zinc-400 mt-1">{profile?.xp || 0} XP</p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  {user?.email?.toLowerCase() === 'haryormeekun99@gmail.com' ? 0 : (profile?.xp || 0)} XP
+                </p>
               </div>
               <Link to="/learn" className="px-4 py-3 text-sm text-[var(--muted-fg)] hover:text-white hover:bg-white/10 transition-colors cursor-pointer">My Dashboard</Link>
               <Link to="/profile" className="px-4 py-3 text-sm text-[var(--muted-fg)] hover:text-white hover:bg-white/10 transition-colors cursor-pointer">My Profile</Link>

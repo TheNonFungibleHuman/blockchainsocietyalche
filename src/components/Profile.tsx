@@ -32,7 +32,7 @@ export default function Profile() {
   }, [profile]);
 
   if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
+    return null;
   }
 
   if (!user) {
@@ -88,7 +88,9 @@ export default function Profile() {
               </div>
               <div>
                 <p className="text-sm text-zinc-400 mb-1 uppercase tracking-wider">Total XP</p>
-                <p className="text-4xl font-mono text-white">{profile?.xp || 0}</p>
+                <p className="text-4xl font-mono text-white">
+                  {user?.email?.toLowerCase() === 'haryormeekun99@gmail.com' ? 0 : (profile?.xp || 0)}
+                </p>
               </div>
             </div>
             

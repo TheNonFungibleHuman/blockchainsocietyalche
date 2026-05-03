@@ -26,7 +26,7 @@ export default function Settings() {
   }, [profile]);
 
   if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
+    return null;
   }
 
   if (!user) {

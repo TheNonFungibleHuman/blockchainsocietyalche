@@ -21,14 +21,23 @@ export default function Leaderboard() {
           const data = doc.data();
           const fullName = data.displayName || 'Blocknaut';
           const firstName = fullName.split(' ')[0];
+          
+          let xp = data.xp || 0;
+          const isUser = user?.uid === doc.id;
+          
+          // Force XP to 0 for tester account in UI
+          if (isUser && user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
+            xp = 0;
+          }
+
           return {
             id: doc.id,
             name: firstName,
             country: data.country || "Global",
-            xp: data.xp || 0,
+            xp: xp,
             rank: index + 1,
             trend: "up", // Mock trend
-            isUser: user?.uid === doc.id,
+            isUser: isUser,
             photoURL: data.photoURL
           };
         });
@@ -79,7 +88,17 @@ export default function Leaderboard() {
 
           <div className="flex flex-col gap-2">
             {loading ? (
-              <div className="py-20 text-center text-zinc-500">Loading rankings...</div>
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <div className="relative w-12 h-12">
+                  <div className="absolute inset-0 border-2 border-zinc-200 dark:border-zinc-800 rounded-full" />
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 border-2 border-blue-500 border-t-transparent rounded-full"
+                  />
+                </div>
+                <p className="text-sm text-zinc-500 animate-pulse font-serif italic">Gathering Blocknauts...</p>
+              </div>
             ) : leaderboard.length === 0 ? (
               <div className="py-20 text-center text-zinc-500">No rankings available yet.</div>
             ) : (

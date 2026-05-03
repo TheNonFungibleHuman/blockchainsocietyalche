@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Circle, BookOpen, PlayCircle, LockKey, CaretRight, CaretLeft, CaretDown, BookBookmark, Trophy, FileText, X as XIcon, ArrowRight, Shield, List } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { courseData } from '../data/courseData';
 import Navbar from './Navbar';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import CexDexDemo from './demos/CexDexDemo';
 import TransactionLifecycleDemo from './demos/TransactionLifecycleDemo';
@@ -28,12 +28,33 @@ export default function Course() {
   const [completedPages, setCompletedPages] = useState<string[]>([]);
   const [userXP, setUserXP] = useState(0); 
   const [quizStates, setQuizStates] = useState<Record<string, { currentQ: number, attempts: Record<string, number>, finished: boolean }>>({});
+  const [videoLoading, setVideoLoading] = useState(true);
   
+  const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to top on page change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo(0, 0);
+    }
+    setVideoLoading(true);
+  }, [activePage, activeModule]);
+
   // Sync local state with Firebase profile on load
   useEffect(() => {
     if (profile) {
       setCompletedPages(profile.completedPages || []);
-      setUserXP(profile.xp || 0);
+      
+      // Hardcode XP to 0 for tester account
+      if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
+        setUserXP(0);
+        if (profile.xp !== 0) {
+          updateFirebaseProfile({ xp: 0 });
+        }
+      } else {
+        setUserXP(profile.xp || 0);
+      }
+
       try {
         if (profile.quizStates) {
           setQuizStates(JSON.parse(profile.quizStates));
@@ -45,25 +66,31 @@ export default function Course() {
       // Fallback for unauthenticated users (demo mode)
       setUserXP(140);
     }
-  }, [profile]);
+  }, [profile, user?.email]);
 
   // Helper to update Firebase
   const updateFirebaseProfile = async (updates: any) => {
     if (!user) return;
+
+    // Prevent XP updates for the tester account, always force to 0
+    const isTester = user.email?.toLowerCase() === 'haryormeekun99@gmail.com';
+    if (isTester) {
+      updates.xp = 0;
+    }
+
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, updates);
       
-      // If XP changed, update public profile
+      // If XP changed (or if it's the tester), update public profile
       if (updates.xp !== undefined) {
         const publicRef = doc(db, 'public_profiles', user.uid);
-        import('firebase/firestore').then(({ setDoc }) => {
-          setDoc(publicRef, { 
-            xp: updates.xp,
-            displayName: profile?.displayName || user.displayName || 'Blocknaut',
-            photoURL: profile?.photoURL || user.photoURL || ''
-          }, { merge: true });
-        });
+        await setDoc(publicRef, { 
+          xp: updates.xp,
+          displayName: profile?.displayName || user.displayName || 'Blocknaut',
+          photoURL: profile?.photoURL || user.photoURL || '',
+          country: profile?.country || 'Global'
+        }, { merge: true });
       }
     } catch (error) {
       console.error("Error updating profile", error);
@@ -71,6 +98,12 @@ export default function Course() {
   };
 
   const handleSetUserXP = (updater: number | ((prev: number) => number)) => {
+    if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
+      setUserXP(0);
+      // Also force update public profile to 0 if it's currently something else
+      updateFirebaseProfile({ xp: 0 });
+      return;
+    }
     setUserXP(prev => {
       const newXP = typeof updater === 'function' ? updater(prev) : updater;
       updateFirebaseProfile({ xp: newXP });
@@ -104,11 +137,7 @@ export default function Course() {
   }, [isDark]);
 
   if (authLoading) {
-    return (
-      <div className="h-screen bg-[#FAF7F2] dark:bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return null;
   }
 
   const handleFinishWelcome = async () => {
@@ -134,6 +163,40 @@ export default function Course() {
 
   const currentIndex = allPages.findIndex(p => p.moduleId === activeModule && p.pageId === activePage);
 
+  const isPageLocked = (pageIndex: number) => {
+    if (pageIndex <= 0) return false;
+    
+    // Global bypass for testing account
+    if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
+      return false;
+    }
+    
+    const page = allPages[pageIndex];
+    
+    // 1. Check Part 2+ restriction for non-testers
+    // Only haryormeekun99@gmail.com can see Part 2 and beyond
+    if (page.partId && page.partId !== 'part-1') {
+      if (user?.email?.toLowerCase() !== 'haryormeekun99@gmail.com') {
+        return true;
+      }
+    }
+
+    // 2. Welcome Video Lock
+    // Everything except the first page is locked until welcome video is watched
+    if (pageIndex > 0 && profile && !profile.welcomeWatched) {
+      return true;
+    }
+
+    // 3. Strict sequential lock: prev page must be completed
+    const prevPage = allPages[pageIndex - 1];
+    const prevGlobalId = prevPage.moduleId ? `${prevPage.moduleId}-${prevPage.pageId}` : prevPage.pageId;
+    const isPrevCompleted = completedPages.includes(prevGlobalId) || completedPages.includes(prevPage.pageId);
+    
+    if (!isPrevCompleted) return true;
+
+    return false;
+  };
+
   // Derived Data
   const currentPartData = useMemo(() => courseData.parts.find(p => p.id === activePart), [activePart]);
   const currentModuleData = useMemo(() => currentPartData?.modules.find(m => m.id === activeModule), [currentPartData, activeModule]);
@@ -151,7 +214,7 @@ export default function Course() {
   };
 
   const handleNext = () => {
-    const globalPageId = `${activeModule}-${activePage}`;
+    const globalPageId = activeModule ? `${activeModule}-${activePage}` : activePage;
     // Support legacy completion format (just pageId) for backwards compatibility
     const isAlreadyCompleted = completedPages.includes(globalPageId) || completedPages.includes(activePage);
     
@@ -214,10 +277,17 @@ export default function Course() {
             const data = doc.data();
             const fullName = data.displayName || 'Blocknaut';
             const firstName = fullName.split(' ')[0];
+            
+            let xp = data.xp || 0;
+            // Force XP to 0 for tester account
+            if (doc.id === user?.uid && user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
+              xp = 0;
+            }
+
             return {
               rank: index + 1,
               name: firstName,
-              xp: data.xp || 0,
+              xp: xp,
               photoURL: data.photoURL,
               country: data.country || 'Global'
             };
@@ -277,25 +347,32 @@ export default function Course() {
 
           <div className="p-4 flex flex-col gap-2">
             {/* Introduction Section */}
-            {(courseData as any).introduction?.map((page: any) => {
+            {(courseData as any).introduction?.map((page: any, idx: number) => {
               const isActive = activePage === page.id && activeModule === null;
               const isCompleted = completedPages.includes(page.id);
+              const isLocked = isPageLocked(idx);
               return (
                 <button
                   key={page.id}
                   onClick={() => {
+                    if (isLocked) return;
                     setActivePart(null);
                     setActiveModule(null);
                     setActivePage(page.id);
                     setIsSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all cursor-pointer ${
+                  disabled={isLocked}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                    isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                  } ${
                     isActive 
                       ? 'bg-blue-500/10 dark:bg-blue-900/30 text-zinc-900 dark:text-white font-bold border-2 border-blue-500/50 shadow-lg' 
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400'
                   }`}
                 >
-                  {isCompleted ? (
+                  {isLocked ? (
+                    <LockKey size={18} weight="bold" className="text-zinc-400 shrink-0" />
+                  ) : isCompleted ? (
                     <CheckCircle size={18} weight="fill" className="text-emerald-500 shrink-0" />
                   ) : isActive ? (
                     <CaretRight size={18} weight="bold" className="text-blue-500 shrink-0" />
@@ -339,8 +416,9 @@ export default function Course() {
                                 const isCompleted = completedPages.includes(globalPageId) || (module.id === 'module-1.1' && completedPages.includes(page.id));
                                 const isActive = activeModule === module.id && activePage === page.id;
                                 
-                                // Locking logic: If welcome video hasn't been watched, everything except the welcome video is locked
-                                const isLocked = profile && !profile.welcomeWatched && !(page as any).isWelcome;
+                                // Enhanced Locking Logic
+                                const pageIdx = allPages.findIndex(p => p.moduleId === module.id && p.pageId === page.id);
+                                const isLocked = isPageLocked(pageIdx);
 
                                 return (
                                   <button
@@ -391,7 +469,7 @@ export default function Course() {
         </aside>
 
         {/* CENTER PANE: Main Content */}
-        <main className="flex-1 overflow-y-auto relative bg-white dark:bg-[#0a0a0a] flex flex-col">
+        <main ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white dark:bg-[#0a0a0a] flex flex-col">
           
           {/* Desktop/Mobile Header */}
           <div className="flex items-center justify-between p-4 h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/80 backdrop-blur-md sticky top-0 z-20">
@@ -523,8 +601,29 @@ export default function Course() {
                 />
               ) : currentPageData?.type === 'video' ? (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <div className="aspect-video w-full rounded-3xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl">
+                  <div className="aspect-video w-full rounded-3xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl relative">
+                    <AnimatePresence>
+                      {videoLoading && (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 z-10 bg-zinc-900 flex flex-col items-center justify-center gap-4 text-white"
+                        >
+                          <div className="relative w-12 h-12">
+                            <div className="absolute inset-0 border-2 border-zinc-800 rounded-full" />
+                            <motion.div 
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              className="absolute inset-0 border-2 border-emerald-500 border-t-transparent rounded-full"
+                            />
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.2em] font-bold text-zinc-500">Initializing Video Feed...</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     <iframe 
+                      key={(currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
                       src={`https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?autoplay=0`} 
@@ -532,6 +631,8 @@ export default function Course() {
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                       allowFullScreen
+                      onLoad={() => setVideoLoading(false)}
+                      className="relative z-0"
                     ></iframe>
                   </div>
                   <div className="bg-zinc-50 dark:bg-zinc-900/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
@@ -699,7 +800,10 @@ export default function Course() {
                         <span className="text-xs font-mono text-zinc-500">{user.xp} XP</span>
                       </div>
                     )) : (
-                      <div className="text-center p-4 text-sm text-zinc-500">Loading leaderboard...</div>
+                      <div className="flex flex-col items-center justify-center py-12 gap-4">
+                         <div className="w-8 h-8 border-2 border-zinc-200 dark:border-zinc-800 border-t-blue-500 rounded-full animate-spin" />
+                         <p className="text-xs text-zinc-500 italic font-serif">Contacting ground control...</p>
+                      </div>
                     )}
                   </div>
                 )}
