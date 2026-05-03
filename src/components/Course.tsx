@@ -818,9 +818,9 @@ export default function Course() {
           {rightPaneTab && (
             <motion.aside 
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 350, opacity: 1 }}
+              animate={{ width: window.innerWidth < 768 ? '100%' : 350, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 overflow-hidden flex flex-col"
+              className="fixed md:relative inset-y-0 right-0 z-50 md:z-auto md:shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 md:bg-zinc-50 md:dark:bg-zinc-900/30 overflow-hidden flex flex-col shadow-2xl md:shadow-none"
             >
               <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-zinc-900">
                 <h3 className="font-medium capitalize flex items-center gap-2">

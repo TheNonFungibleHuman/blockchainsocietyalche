@@ -77,21 +77,21 @@ export default function Leaderboard() {
             <Trophy size={48} weight="fill" className="group-hover:scale-110 transition-transform" />
           </motion.div>
           <div className="text-[10px] font-bold text-zinc-500 mb-4 uppercase tracking-[0.4em]">Strategic Standings</div>
-          <h1 className="font-serif text-6xl md:text-8xl tracking-tight leading-none mb-8">Global Rankings</h1>
+          <h1 className="font-serif text-4xl sm:text-6xl md:text-8xl tracking-tight leading-none mb-8">Global Rankings</h1>
           <p className="text-zinc-500 max-w-xl mx-auto text-lg leading-relaxed text-balance">
             Validated proof of expertise within the Blocknauts ecosystem
           </p>
         </div>
 
-        <div className="liquid-glass rounded-[3rem] p-1 overflow-hidden premium-shadow">
-          <div className="bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[2.8rem] p-4 md:p-10 relative overflow-hidden">
+        <div className="liquid-glass rounded-3xl md:rounded-[3rem] p-1 overflow-hidden premium-shadow">
+          <div className="bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[1.4rem] md:rounded-[2.8rem] p-4 md:p-10 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
             
-            <div className="grid grid-cols-[auto_1fr_auto_auto] gap-4 px-8 py-6 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] border-b border-white/5 mb-6">
-              <div className="w-16 text-center">Rank</div>
+            <div className="grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[4rem_1fr_auto_auto] gap-2 md:gap-4 px-4 md:px-8 py-6 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] border-b border-white/5 mb-6">
+              <div className="w-10 md:w-16 text-center">Rank</div>
               <div>Blocknaut</div>
               <div className="w-24 text-center hidden sm:block">Sector</div>
-              <div className="w-32 text-right">Validated XP</div>
+              <div className="w-20 md:w-32 text-right">Validated XP</div>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -116,7 +116,7 @@ export default function Leaderboard() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                    className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 items-center px-8 py-5 rounded-[1.5rem] transition-all relative group overflow-hidden ${
+                    className={`grid grid-cols-[3rem_1fr_auto] sm:grid-cols-[4rem_1fr_auto_auto] gap-2 md:gap-4 items-center px-4 md:px-8 py-5 rounded-[1.5rem] transition-all relative group overflow-hidden ${
                       u.isUser 
                         ? 'bg-blue-500/10 border border-blue-500/20' 
                         : 'hover:bg-white/[0.03] border border-transparent hover:border-white/5'
@@ -126,34 +126,34 @@ export default function Leaderboard() {
                       <div className="absolute inset-0 bg-accent-gradient opacity-0 group-hover:opacity-10 transition-opacity" />
                     )}
                     
-                    <div className="w-16 flex justify-center relative z-10">
+                    <div className="w-10 md:w-16 flex justify-center relative z-10">
                       {u.rank === 1 ? (
-                        <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shadow-lg shadow-yellow-500/5">
-                          <Medal size={24} weight="fill" className="text-yellow-500" />
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shadow-lg shadow-yellow-500/5">
+                          <Medal size={20} className="md:w-6 md:h-6 text-yellow-500" weight="fill" />
                         </div>
                       ) : u.rank === 2 ? (
-                        <div className="w-10 h-10 rounded-xl bg-zinc-400/10 border border-zinc-400/20 flex items-center justify-center shadow-lg shadow-zinc-400/5">
-                          <Medal size={24} weight="fill" className="text-zinc-400" />
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-400/10 border border-zinc-400/20 flex items-center justify-center shadow-lg shadow-zinc-400/5">
+                          <Medal size={20} className="md:w-6 md:h-6 text-zinc-400" weight="fill" />
                         </div>
                       ) : u.rank === 3 ? (
-                        <div className="w-10 h-10 rounded-xl bg-amber-700/10 border border-amber-700/20 flex items-center justify-center shadow-lg shadow-amber-700/5">
-                          <Medal size={24} weight="fill" className="text-amber-700" />
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-amber-700/10 border border-amber-700/20 flex items-center justify-center shadow-lg shadow-amber-700/5">
+                          <Medal size={20} className="md:w-6 md:h-6 text-amber-700" weight="fill" />
                         </div>
                       ) : (
-                        <span className="text-lg font-mono font-medium text-zinc-600 group-hover:text-zinc-400 transition-colors">{u.rank.toString().padStart(2, '0')}</span>
+                        <span className="text-base md:text-lg font-mono font-medium text-zinc-600 group-hover:text-zinc-400 transition-colors uppercase">{u.rank.toString().padStart(2, '0')}</span>
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-6 relative z-10">
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center font-bold text-sm overflow-hidden group-hover:scale-105 transition-transform">
+                    <div className="flex items-center gap-3 md:gap-6 relative z-10 overflow-hidden">
+                      <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center font-bold text-xs md:text-sm overflow-hidden group-hover:scale-105 transition-transform shrink-0">
                         {u.photoURL ? (
                           <img src={u.photoURL} alt={u.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           <span className="text-zinc-600">{u.name.charAt(0)}</span>
                         )}
                       </div>
-                      <span className={`font-medium tracking-tight text-lg ${u.isUser ? 'text-white' : 'text-zinc-300 group-hover:text-white transition-colors'}`}>
-                        {u.name} {u.isUser && <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-blue-500">You</span>}
+                      <span className={`font-medium tracking-tight text-sm md:text-lg truncate ${u.isUser ? 'text-white' : 'text-zinc-300 group-hover:text-white transition-colors'}`}>
+                        {u.name} {u.isUser && <span className="ml-1 text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-blue-500">You</span>}
                       </span>
                     </div>
   
@@ -162,11 +162,11 @@ export default function Leaderboard() {
                       <span className="uppercase tracking-widest">{u.country}</span>
                     </div>
   
-                    <div className="w-32 text-right flex items-center justify-end gap-3 relative z-10">
-                      <span className="font-serif text-3xl tabular-nums">{u.xp}</span>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest leading-none mb-1">Status</span>
-                        {u.trend === 'up' && <TrendUp size={14} weight="bold" className="text-emerald-500 animate-bounce" />}
+                    <div className="w-20 md:w-32 text-right flex items-center justify-end gap-2 md:gap-3 relative z-10">
+                      <span className="font-serif text-xl md:text-3xl tabular-nums">{u.xp}</span>
+                      <div className="flex flex-col items-end shrink-0">
+                        <span className="text-[6px] md:text-[8px] font-bold text-zinc-600 uppercase tracking-widest leading-none mb-1">Status</span>
+                        {u.trend === 'up' && <TrendUp size={12} className="md:w-3.5 md:h-3.5 text-emerald-500 animate-bounce" weight="bold" />}
                       </div>
                     </div>
                   </motion.div>
