@@ -16,19 +16,18 @@ export default function Leaderboard() {
     try {
       const q = query(collection(db, 'public_profiles'), orderBy('xp', 'desc'), limit(50));
       const snapshot = await getDocs(q);
-      const users = snapshot.docs.map((doc, index) => {
+      const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
+      
+      const filteredDocs = snapshot.docs.filter(doc => doc.id !== TESTER_UID);
+      
+      const users = filteredDocs.map((doc, index) => {
         const data = doc.data();
         const fullName = data.displayName || 'Blocknaut';
         const firstName = fullName.split(' ')[0];
         
-        let xp = data.xp || 0;
+        const xp = data.xp || 0;
         const isUser = user?.uid === doc.id;
         
-        // Force XP to 0 for tester account in UI
-        if (isUser && user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
-          xp = 0;
-        }
-
         return {
           id: doc.id,
           name: firstName,
