@@ -32,13 +32,40 @@ export default function Course() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Scroll to top on page change
+  // Flattened pages for robust forward/back navigation
+  const allPages = useMemo(() => {
+    const introPages = (courseData as any).introduction?.map(page => ({ partId: null, moduleId: null, pageId: page.id })) || [];
+    const mainPages = courseData.parts?.flatMap(p => 
+      p.modules?.flatMap(m => 
+        m.pages?.map(page => ({ partId: p.id, moduleId: m.id, pageId: page.id })) || []
+      ) || []
+    ) || [];
+    return [...introPages, ...mainPages];
+  }, []);
+
+  // Derived Data
+  const currentPartData = useMemo(() => courseData.parts.find(p => p.id === activePart), [activePart]);
+  const currentModuleData = useMemo(() => currentPartData?.modules.find(m => m.id === activeModule), [currentPartData, activeModule]);
+  const currentPageData = useMemo(() => {
+    if (!activeModule) {
+      return (courseData as any).introduction?.find(p => p.id === activePage);
+    }
+    return currentModuleData?.pages.find(p => p.id === activePage);
+  }, [currentModuleData, activeModule, activePage]);
+
+  const currentIndex = allPages.findIndex(p => p.moduleId === activeModule && p.pageId === activePage);
+
+  // Scroll to top and handle video loading on page change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo(0, 0);
     }
-    setVideoLoading(true);
-  }, [activePage, activeModule]);
+    
+    // Only trigger video loading if it's a video page
+    if (currentPageData?.type === 'video') {
+      setVideoLoading(true);
+    }
+  }, [activePage, activeModule, currentPageData?.type]);
 
   // Sync local state with Firebase profile on load
   useEffect(() => {
@@ -150,19 +177,6 @@ export default function Course() {
     }
   };
 
-  // Flattened pages for robust forward/back navigation
-  const allPages = useMemo(() => {
-    const introPages = (courseData as any).introduction?.map(page => ({ partId: null, moduleId: null, pageId: page.id })) || [];
-    const mainPages = courseData.parts?.flatMap(p => 
-      p.modules?.flatMap(m => 
-        m.pages?.map(page => ({ partId: p.id, moduleId: m.id, pageId: page.id })) || []
-      ) || []
-    ) || [];
-    return [...introPages, ...mainPages];
-  }, []);
-
-  const currentIndex = allPages.findIndex(p => p.moduleId === activeModule && p.pageId === activePage);
-
   const isPageLocked = (pageIndex: number) => {
     if (pageIndex <= 0) return false;
     
@@ -196,16 +210,6 @@ export default function Course() {
 
     return false;
   };
-
-  // Derived Data
-  const currentPartData = useMemo(() => courseData.parts.find(p => p.id === activePart), [activePart]);
-  const currentModuleData = useMemo(() => currentPartData?.modules.find(m => m.id === activeModule), [currentPartData, activeModule]);
-  const currentPageData = useMemo(() => {
-    if (!activeModule) {
-      return (courseData as any).introduction?.find(p => p.id === activePage);
-    }
-    return currentModuleData?.pages.find(p => p.id === activePage);
-  }, [currentModuleData, activeModule, activePage]);
 
   const togglePart = (partId: string) => {
     setExpandedParts(prev => 
@@ -299,30 +303,30 @@ export default function Course() {
   }, [rightPaneTab]);
 
   return (
-    <div className="h-screen bg-[#FAF7F2] dark:bg-black text-zinc-900 dark:text-white transition-colors duration-500 font-sans flex flex-col overflow-hidden">
+    <div className="h-screen bg-[#050505] text-white transition-colors duration-500 font-sans flex flex-col overflow-hidden relative">
+       <div className="fixed inset-0 noise-overlay z-0 pointer-events-none" />
       <Navbar />
       
       {/* 3-Pane Cockpit Layout */}
-      <div className="flex-1 w-full flex overflow-hidden border-t border-zinc-200 dark:border-zinc-800 relative">
+      <div className="flex-1 w-full flex overflow-hidden border-t border-white/5 relative z-10">
         
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-[60] md:hidden backdrop-blur-sm" 
+            className="fixed inset-0 bg-black/60 z-[60] md:hidden backdrop-blur-md" 
             onClick={() => setIsSidebarOpen(false)} 
           />
         )}
 
         {/* LEFT PANE: Progress Sidebar */}
-        <aside className={`fixed inset-y-0 left-0 z-[70] w-80 bg-[#FAF7F2] dark:bg-[#0a0a0a] border-r border-zinc-200 dark:border-zinc-800 transform transition-transform duration-300 ease-in-out md:relative ${isSidebarCollapsed ? 'md:-ml-80' : 'md:ml-0'} ${isSidebarOpen ? 'translate-x-[0px]' : '-translate-x-full md:translate-x-0'} flex flex-col h-full overflow-y-auto`}>
-          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10 bg-[#FAF7F2] dark:bg-[#0a0a0a]">
+        <aside className={`fixed inset-y-0 left-0 z-[70] w-85 bg-[#080808] border-r border-white/5 transform transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) md:relative ${isSidebarCollapsed ? 'md:-ml-85 opacity-0' : 'md:ml-0 opacity-100'} ${isSidebarOpen ? 'translate-x-[0px]' : '-translate-x-full md:translate-x-0'} flex flex-col h-full overflow-y-auto`}>
+          <div className="p-8 border-b border-white/5 sticky top-0 z-10 bg-[#080808]/95 backdrop-blur-xl">
             {/* Sidebar Toggle/Back Header */}
-            <div className="flex items-center justify-between mb-6">
-              <Link to="/learn" className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer">
-                <CaretLeft weight="bold" /> Back to Academy
+            <div className="flex items-center justify-between mb-8">
+              <Link to="/learn" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 hover:text-white transition-all cursor-pointer group">
+                <CaretLeft weight="bold" className="group-hover:-translate-x-1 transition-transform" /> Back
               </Link>
 
-              {/* Collapse Button (Visible on both mobile/desktop inside sidebar) */}
               <button 
                 onClick={() => {
                   if (window.innerWidth < 768) {
@@ -331,18 +335,32 @@ export default function Course() {
                     setIsSidebarCollapsed(true);
                   }
                 }}
-                className="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
+                className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-white transition-all cursor-pointer"
                 title="Collapse Sidebar"
               >
-                <List size={20} />
+                <List size={22} />
               </button>
             </div>
             
-            <h2 className="font-serif text-xl mb-2">{courseData.title}</h2>
-            <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 mb-2 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-red-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+            <div className="mb-6">
+               <div className="text-[10px] font-bold text-zinc-500 mb-1 uppercase tracking-widest">Enrollment 01</div>
+               <h2 className="font-serif text-2xl tracking-tight leading-tight">{courseData.title}</h2>
             </div>
-            <p className="text-xs text-zinc-500">{progressPercentage}% Complete</p>
+
+            <div className="space-y-3">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                <span className="text-zinc-500">Sync Status</span>
+                <span className="text-white">{progressPercentage}%</span>
+              </div>
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercentage}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="bg-accent-gradient h-full rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+                />
+              </div>
+            </div>
           </div>
 
           <div className="p-4 flex flex-col gap-2">
@@ -469,75 +487,83 @@ export default function Course() {
         </aside>
 
         {/* CENTER PANE: Main Content */}
-        <main ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white dark:bg-[#0a0a0a] flex flex-col">
+        <main ref={scrollRef} className="flex-1 overflow-y-auto relative bg-[#050505] flex flex-col selection:bg-blue-500/30">
           
           {/* Desktop/Mobile Header */}
-          <div className="flex items-center justify-between p-4 h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/80 backdrop-blur-md sticky top-0 z-20">
-            <div className="flex items-center gap-3 overflow-hidden">
-              {/* Desktop Open Button */}
+          <div className="flex items-center justify-between px-8 h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-3xl sticky top-0 z-20">
+            <div className="flex items-center gap-4 overflow-hidden">
               <button 
                 onClick={() => setIsSidebarCollapsed(false)} 
-                className={`hidden p-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer ${isSidebarCollapsed ? 'md:flex' : 'md:hidden'}`}
+                className={`hidden p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl transition-all cursor-pointer ${isSidebarCollapsed ? 'md:flex' : 'md:hidden'}`}
                 title="Open Sidebar"
               >
                 <List size={24} />
               </button>
               
-              {/* Mobile Open Button */}
               {!isSidebarOpen && (
                 <button 
                   onClick={() => setIsSidebarOpen(true)} 
-                  className="md:hidden p-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+                  className="md:hidden p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl transition-all cursor-pointer"
                   title="Open Sidebar"
                 >
-                  <List size={24} />
+                  <List size={22} />
                 </button>
               )}
 
               <div className="flex flex-col overflow-hidden">
-                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 leading-none mb-1 truncate">
+                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 leading-none mb-1.5 truncate">
                    {activeModule ? currentModuleData?.title : 'Core Orientation'}
                  </span>
-                 <span className="font-serif text-sm truncate max-w-[150px] sm:max-w-xs md:max-w-md leading-none">
+                 <span className="font-serif text-lg truncate max-w-[150px] sm:max-w-xs md:max-w-md leading-none">
                    {currentPageData?.title}
                  </span>
               </div>
             </div>
 
             {/* Header Actions */}
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setRightPaneTab(rightPaneTab === 'glossary' ? null : 'glossary')}
-                className={`p-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer ${rightPaneTab === 'glossary' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-                title="Glossary"
-              >
-                <BookBookmark size={20} />
-              </button>
-              <button 
-                onClick={() => setRightPaneTab(rightPaneTab === 'resources' ? null : 'resources')}
-                className={`p-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer ${rightPaneTab === 'resources' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-                title="Resources"
-              >
-                <FileText size={20} />
-              </button>
+            <div className="flex items-center gap-3">
+              <div className="flex bg-white/5 rounded-2xl p-1 border border-white/5">
+                <button 
+                  onClick={() => setRightPaneTab(rightPaneTab === 'glossary' ? null : 'glossary')}
+                  className={`p-2.5 rounded-xl transition-all cursor-pointer ${rightPaneTab === 'glossary' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  title="Glossary"
+                >
+                  <BookBookmark size={18} weight={rightPaneTab === 'glossary' ? 'fill' : 'bold'} />
+                </button>
+                <button 
+                  onClick={() => setRightPaneTab(rightPaneTab === 'resources' ? null : 'resources')}
+                  className={`p-2.5 rounded-xl transition-all cursor-pointer ${rightPaneTab === 'resources' ? 'bg-white text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  title="Resources"
+                >
+                  <FileText size={18} weight={rightPaneTab === 'resources' ? 'fill' : 'bold'} />
+                </button>
+              </div>
+              
               <button 
                 onClick={() => setRightPaneTab(rightPaneTab === 'leaderboard' ? null : 'leaderboard')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center gap-2 cursor-pointer ${rightPaneTab === 'leaderboard' ? 'bg-emerald-500 text-white border-transparent' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
+                className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl text-[10px] font-bold tracking-[0.1em] border transition-all cursor-pointer group ${rightPaneTab === 'leaderboard' ? 'bg-accent-gradient border-transparent text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 border-white/10 text-zinc-400 h-10 hover:border-white/20 hover:text-white'}`}
               >
-                <Trophy size={14} className={rightPaneTab === 'leaderboard' ? 'text-white' : 'text-orange-500'} /> {userXP} <span className="hidden sm:inline">XP</span>
+                <Trophy size={16} className={`transition-transform group-hover:scale-110 ${rightPaneTab === 'leaderboard' ? 'text-white' : 'text-orange-500'}`} weight="fill" /> 
+                {userXP} <span className="hidden sm:inline">XP</span>
               </button>
             </div>
           </div>
 
-          <div className="max-w-3xl mx-auto px-6 md:px-8 py-12 md:py-20 min-h-full flex flex-col w-full">
-            <div className="mb-8 mt-12 md:mt-0">
-              <span className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-red-500 mb-2 block">
+          <div className="max-w-3xl mx-auto px-8 py-20 min-h-full flex flex-col w-full relative z-10">
+            <motion.div 
+              key={activePage}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-12"
+            >
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-gradient mb-4 block">
                 {activeModule ? currentModuleData?.title : 'Core Orientation'}
               </span>
-              <h1 className="font-serif text-3xl md:text-5xl tracking-tight leading-tight">
+              <h1 className="font-serif text-4xl md:text-6xl tracking-tight leading-[1.1] mb-8">
                 {currentPageData?.title}
               </h1>
-            </div>
+            </motion.div>
 
             <div className="flex-1">
               {currentPageData?.type === 'interactive' ? (
@@ -626,7 +652,7 @@ export default function Course() {
                       key={(currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
-                      src={`https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?autoplay=0`} 
+                      src={`https://www.youtube-nocookie.com/embed/${(currentPageData as any).youtubeId}?autoplay=0&origin=${window.location.origin}`} 
                       title={currentPageData.title}
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
