@@ -652,12 +652,11 @@ export default function Course() {
                       key={(currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
-                      src={`https://www.youtube-nocookie.com/embed/${(currentPageData as any).youtubeId}?autoplay=0`} 
+                      src={`https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?autoplay=0&origin=${window.location.origin}`} 
                       title={currentPageData.title}
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                       allowFullScreen
-                      referrerPolicy="no-referrer"
                       onLoad={() => setVideoLoading(false)}
                       className="relative z-0"
                     ></iframe>
