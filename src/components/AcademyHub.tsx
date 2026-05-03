@@ -15,12 +15,32 @@ export default function AcademyHub() {
 
   // Calculate overall progress
   const allPages = useMemo(() => {
-    return courseData.parts?.flatMap(p => 
+    const introPages = (courseData as any).introduction?.map((page: any) => ({ partId: null, moduleId: null, pageId: page.id })) || [];
+    const mainPages = courseData.parts?.flatMap(p => 
       p.modules?.flatMap(m => 
         m.pages?.map(page => ({ partId: p.id, moduleId: m.id, pageId: page.id })) || []
       ) || []
     ) || [];
+    return [...introPages, ...mainPages];
   }, []);
+
+  const resumeUrl = useMemo(() => {
+    if (!profile?.completedPages?.length) return '/learn/course';
+    
+    let highestIdx = -1;
+    profile.completedPages.forEach(pId => {
+      const idx = allPages.findIndex(p => p.pageId === pId || `${p.moduleId}-${p.pageId}` === pId);
+      if (idx > highestIdx) highestIdx = idx;
+    });
+
+    if (highestIdx === -1) return '/learn/course';
+    
+    const page = allPages[highestIdx];
+    let url = `/learn/course?page=${page.pageId}`;
+    if (page.moduleId) url += `&module=${page.moduleId}`;
+    if (page.partId) url += `&part=${page.partId}`;
+    return url;
+  }, [profile?.completedPages, allPages]);
 
   const completedPagesCount = profile?.completedPages?.length || 0;
   const progressPercentage = allPages.length > 0 ? Math.round((completedPagesCount / allPages.length) * 100) : 0;
@@ -37,7 +57,7 @@ export default function AcademyHub() {
     try {
       await signInWithGoogle();
       setShowAuthModal(false);
-      navigate('/learn/course');
+      navigate(resumeUrl);
     } catch (error: any) {
       if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
         return;
@@ -189,7 +209,7 @@ export default function AcademyHub() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Link 
-                    to="/learn/course"
+                    to={resumeUrl}
                     className="relative z-10 shrink-0 flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold text-sm tracking-wide hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all cursor-pointer group/btn overflow-hidden"
                   >
                     <span className="relative z-10">{progressPercentage > 0 ? 'Resume Mission' : 'Initiate Sequence'}</span>
@@ -215,7 +235,7 @@ export default function AcademyHub() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <Link to="/learn/course" onClick={handleCourseClick} className="group block h-full">
+              <Link to={resumeUrl} onClick={handleCourseClick} className="group block h-full">
                 <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-white/20 transition-all duration-500 h-full flex flex-col premium-shadow group-hover:-translate-y-2 relative">
                   <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                   
