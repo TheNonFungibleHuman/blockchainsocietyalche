@@ -222,27 +222,28 @@ export default function Course() {
     if (pageIndex <= 0) return false;
     
     // Global bypass for testing account
-    if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
-      return false;
-    }
+    const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
+    if (isTester) return false;
     
     const page = allPages[pageIndex];
     
-    // 1. Check Part 2+ restriction for non-testers
-    // Only haryormeekun99@gmail.com can see Part 2 and beyond
+    // 1. Strict Lock: Part 2+ is TOTALLY locked for non-testers
     if (page.partId && page.partId !== 'part-1') {
-      if (user?.email?.toLowerCase() !== 'haryormeekun99@gmail.com') {
-        return true;
-      }
-    }
-
-    // 2. Welcome Video Lock
-    // Everything except the first page is locked until welcome video is watched
-    if (pageIndex > 0 && profile && !profile.welcomeWatched) {
       return true;
     }
 
-    // 3. Strict sequential lock: prev page must be completed
+    // 2. Welcome Video Lock Check
+    // We check both the Firebase profile and the immediate local completedPages state
+    // index 0 is always the welcome video intro
+    const welcomePage = allPages[0];
+    const welcomeGlobalId = welcomePage.moduleId ? `${welcomePage.moduleId}-${welcomePage.pageId}` : welcomePage.pageId;
+    const hasWatchedWelcome = !!profile?.welcomeWatched || completedPages.includes(welcomeGlobalId) || completedPages.includes(welcomePage.pageId);
+
+    if (pageIndex > 0 && !hasWatchedWelcome) {
+      return true;
+    }
+
+    // 3. Sequential lock: Previous page in Part 1 must be completed
     const prevPage = allPages[pageIndex - 1];
     const prevGlobalId = prevPage.moduleId ? `${prevPage.moduleId}-${prevPage.pageId}` : prevPage.pageId;
     const isPrevCompleted = completedPages.includes(prevGlobalId) || completedPages.includes(prevPage.pageId);
