@@ -38,7 +38,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("Auth initialization timed out, forcing loading false");
+        setLoading(false);
+      }
+    }, 8000);
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(timeoutId);
       setUser(firebaseUser);
       
       if (firebaseUser) {
@@ -47,8 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const publicRef = doc(db, 'public_profiles', firebaseUser.uid);
         
         try {
-          const docSnap = await getDoc(userRef);
-          const publicSnap = await getDoc(publicRef);
+          const [docSnap, publicSnap] = await Promise.all([
+            getDoc(userRef),
+            getDoc(publicRef)
+          ]);
           
           const displayName = firebaseUser.displayName || 'Blocknaut';
           const photoURL = firebaseUser.photoURL || '';
@@ -100,15 +110,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (e) {
             console.error("Handled firestore error during auth", e);
           }
+        } finally {
+          setLoading(false);
         }
       } else {
         setProfile(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, []);
 
   // Listen for profile changes
@@ -121,7 +135,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(doc.data() as UserProfile);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+      try {
+        handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+      } catch (e) {
+        console.error("Authenticated onSnapshot listener error:", e);
+      }
     });
 
     return () => unsubscribe();

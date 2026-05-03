@@ -614,7 +614,7 @@ export default function Course() {
                 ) : (
                   <NetworkDemo />
                 )
-              ) : currentPageData?.type === 'quiz' ? (
+              ) : currentPageData?.type === 'quiz' && currentModuleData ? (
                 <Quiz 
                   moduleId={currentModuleData.id}
                   questions={currentPageData.questions || []} 
@@ -652,7 +652,7 @@ export default function Course() {
                       key={(currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
-                      src={`https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?autoplay=0&origin=${window.location.origin}`} 
+                      src={`https://www.youtube-nocookie.com/embed/${(currentPageData as any).youtubeId}?autoplay=0&rel=0`} 
                       title={currentPageData.title}
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
