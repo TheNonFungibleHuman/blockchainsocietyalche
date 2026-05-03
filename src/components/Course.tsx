@@ -667,7 +667,8 @@ export default function Course() {
                 />
               ) : currentPageData?.type === 'video' ? (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <div className="aspect-video w-full rounded-3xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl relative">
+                  <div className={`w-full rounded-3xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl relative ${(currentPageData as any).isWelcome ? "" : "aspect-video"}`}
+                       style={(currentPageData as any).isWelcome ? { paddingBottom: '46.5%', position: 'relative' } : {}}>
                     <AnimatePresence>
                       {videoLoading && (
                         <motion.div 
@@ -689,17 +690,17 @@ export default function Course() {
                       )}
                     </AnimatePresence>
                     <iframe 
-                      key={(currentPageData as any).youtubeId}
+                      key={(currentPageData as any).videoUrl || (currentPageData as any).youtubeId}
                       width="100%" 
                       height="100%" 
-                      src={`https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?rel=0`} 
+                      src={(currentPageData as any).videoUrl || `https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?rel=0`} 
                       title={currentPageData.title}
                       frameBorder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allow={(currentPageData as any).videoUrl ? "clipboard-write; encrypted-media; picture-in-picture" : "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"} 
                       allowFullScreen
                       referrerPolicy="strict-origin-when-cross-origin"
                       onLoad={() => setVideoLoading(false)}
-                      className="relative z-0"
+                      className={(currentPageData as any).isWelcome ? "absolute inset-0 w-full h-full z-0" : "relative z-0"}
                     ></iframe>
                   </div>
                   <div className="bg-zinc-50 dark:bg-zinc-900/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">

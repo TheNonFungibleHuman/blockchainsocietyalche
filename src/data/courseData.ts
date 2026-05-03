@@ -7,7 +7,7 @@ export const courseData = {
       id: "welcome-intro",
       title: "Video: Welcome to Blockchain 101",
       type: "video",
-      youtubeId: "dQw4w9WgXcQ",
+      videoUrl: "https://supercut.ai/embed/haneefff/5cvLyx0yEaSTGXsFXkSdx5?embed=sidebar",
       isWelcome: true
     }
   ],
