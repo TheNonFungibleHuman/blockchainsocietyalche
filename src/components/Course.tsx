@@ -1003,18 +1003,18 @@ function Quiz({
   };
 
   return (
-    <div className="w-full border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 md:p-10 bg-zinc-50 dark:bg-zinc-900/50">
+    <div className="w-full border border-white/10 rounded-3xl p-8 md:p-10 bg-[#0a0a0a]/60 backdrop-blur-xl shadow-2xl">
       <div className="flex justify-between items-center mb-10">
-        <span className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Question {currentQ + 1} of {questions.length}</span>
-        <div className="flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 px-4 py-1.5 rounded-full">
-          <Trophy size={16} className="text-orange-500" />
-          <span className="text-sm font-mono font-medium text-orange-600 dark:text-orange-400">
+        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Objective {currentQ + 1} of {questions.length}</span>
+        <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full">
+          <Trophy size={16} className="text-blue-500" />
+          <span className="text-sm font-mono font-bold text-blue-500">
             {userXP} XP
           </span>
         </div>
       </div>
 
-      <h3 className="text-2xl font-bold mb-10 leading-relaxed">{question.question}</h3>
+      <h3 className="font-serif text-2xl md:text-3xl font-medium mb-10 leading-snug text-white">{question.question}</h3>
 
       <div className="space-y-4 mb-10">
         {question.options.map((opt: string, idx: number) => (
@@ -1022,65 +1022,89 @@ function Quiz({
             key={idx}
             onClick={() => status === 'idle' && setSelected(idx)}
             disabled={status !== 'idle'}
-            className={`w-full text-left p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+            className={`w-full text-left p-6 rounded-2xl border transition-all cursor-pointer group relative overflow-hidden ${
               selected === idx 
                 ? status === 'idle' 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md' 
+                  ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.15)]' 
                   : status === 'correct'
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                    : 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-red-500 bg-red-500/10'
+                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
             }`}
           >
-            {opt}
+            {selected === idx && status === 'idle' && (
+              <motion.div layoutId="quiz-select" className="absolute inset-0 bg-blue-500/5 pointer-events-none" />
+            )}
+            <div className="flex items-center gap-4 relative z-10">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors ${
+                selected === idx
+                  ? status === 'idle'
+                    ? 'bg-blue-500 border-transparent text-white'
+                    : status === 'correct'
+                      ? 'bg-emerald-500 border-transparent text-white'
+                      : 'bg-red-500 border-transparent text-white'
+                  : 'bg-white/5 border-white/10 text-zinc-500 group-hover:text-white group-hover:border-white/20'
+              }`}>
+                {String.fromCharCode(65 + idx)}
+              </div>
+              <span className={`text-lg transition-colors ${selected === idx ? 'text-white font-medium' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
+                {opt}
+              </span>
+            </div>
           </button>
         ))}
       </div>
 
-      {status === 'idle' ? (
-        <button
-          onClick={handleSubmit}
-          disabled={selected === null}
-          className="w-full py-4 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-black font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-all text-lg cursor-pointer hover:bg-gradient-to-r hover:from-blue-600 hover:to-red-600 hover:text-white"
-        >
-          Submit Answer
-        </button>
-      ) : status === 'correct' ? (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4 text-emerald-700 dark:text-emerald-400">
-            <CheckCircle size={32} weight="fill" />
-            <div>
-              <span className="block font-bold text-lg">Correct!</span>
-              <span className="text-sm opacity-80">
-                {attempts[question.id] === 1 ? '+10 XP added to your profile' : 'Good job! (No XP for retakes)'}
-              </span>
-            </div>
-          </div>
-          <button onClick={handleNextQ} className="px-8 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer">
-            {currentQ < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+      <div className="min-h-[80px]">
+        {status === 'idle' ? (
+          <button
+            onClick={handleSubmit}
+            disabled={selected === null}
+            className="w-full py-5 rounded-2xl bg-white text-black font-bold disabled:opacity-20 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-98 transition-all text-lg cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+          >
+            Authenticate Response
           </button>
-        </motion.div>
-      ) : (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-2xl bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3 text-red-700 dark:text-red-400 font-bold text-lg">
-              <XIcon size={24} weight="bold" />
-              <span>Incorrect {attempts[question.id] === 1 && userXP >= 20 ? '(-10 XP)' : ''}</span>
+        ) : status === 'correct' ? (
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4 text-emerald-400">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle size={28} weight="fill" />
+              </div>
+              <div>
+                <span className="block font-bold text-lg">Signature Verified</span>
+                <span className="text-sm opacity-60">
+                  {attempts[question.id] === 1 ? '+10 XP validated to your neural link' : 'Protocol confirmed (Retake complete)'}
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-red-600 dark:text-red-300 max-w-md">
-              Almost! Don't worry, learning takes time. To understand why, take a quick look back at the concept.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-            <button onClick={() => onReviewRedirect(question.hintPageId)} className="px-6 py-3 rounded-xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
-              Review Concept
+            <button onClick={handleNextQ} className="px-8 py-4 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer">
+              {currentQ < questions.length - 1 ? 'Proceed to Next Task' : 'Finalize Session'}
             </button>
-            <button onClick={() => { setSelected(null); setStatus('idle'); }} className="px-6 py-3 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 cursor-pointer">
-              Try Again
-            </button>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        ) : (
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex flex-col items-center sm:items-stretch gap-6">
+            <div className="flex items-center gap-4 text-red-400">
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <XIcon size={24} weight="bold" />
+              </div>
+              <div>
+                <span className="block font-bold text-lg text-red-400">Verification Failed {attempts[question.id] === 1 && userXP >= 20 ? '(-10 XP)' : ''}</span>
+                <p className="text-sm opacity-60">
+                  Almost! don't worry, learning takes time. Review the concept and try again.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
+              <button onClick={() => onReviewRedirect(question.hintPageId)} className="px-6 py-3 rounded-xl bg-white/5 text-white border border-white/10 text-sm font-bold hover:bg-white/10 transition-colors cursor-pointer">
+                Review Concept
+              </button>
+              <button onClick={() => { setSelected(null); setStatus('idle'); }} className="px-6 py-3 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-400 transition-colors shadow-lg shadow-red-500/20 cursor-pointer">
+                Try Access Again
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 }
