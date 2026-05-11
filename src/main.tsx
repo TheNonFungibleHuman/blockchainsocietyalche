@@ -10,6 +10,9 @@ const POSTHOG_HOST = import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.p
 
 const PostHogWrapper = ({ children }: { children: React.ReactNode }) => {
   if (!POSTHOG_KEY) {
+    if (import.meta.env.DEV) {
+      console.warn("PostHog Key missing. Tracking is disabled.");
+    }
     return <>{children}</>;
   }
 
@@ -19,6 +22,9 @@ const PostHogWrapper = ({ children }: { children: React.ReactNode }) => {
       options={{
         api_host: POSTHOG_HOST,
         defaults: '2026-01-30',
+        capture_pageview: true,
+        persistence: 'localStorage+cookie',
+        autocapture: true
       }}
     >
       {children}
