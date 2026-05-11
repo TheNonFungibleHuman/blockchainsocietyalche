@@ -796,7 +796,7 @@ That's what we're building towards, and in the next module, we'll get into exact
               id: "intro-video-1.6",
               title: "Module Introduction",
               type: "video",
-              youtubeId: "dQw4w9WgXcQ"
+              youtubeId: "l382DqXpJX8"
             },
             {
               id: "m1.6-page-1",
@@ -992,7 +992,7 @@ That's the foundation. Everything that comes in the weeks ahead—smart contract
               id: "intro-video-2.1",
               title: "Module Introduction",
               type: "video",
-              youtubeId: "dQw4w9WgXcQ"
+              youtubeId: "uy2mbYgDPJE"
             },
             {
               id: "m2.1-page-1",
@@ -1100,7 +1100,7 @@ Your seed phrase doesn't expire, doesn't need to be renewed, and doesn't care wh
               id: "video-wallet-demo",
               title: "Video: How to Open a Wallet Step-by-Step",
               type: "video",
-              youtubeId: "dQw4w9WgXcQ" // Placeholder, to be replaced by the user later
+              youtubeId: "jBCXf8yylQA" // Placeholder, to be replaced by the user later
             },
             {
               id: "quiz-2.1",
@@ -1263,7 +1263,7 @@ Your seed phrase doesn't expire, doesn't need to be renewed, and doesn't care wh
               id: "intro-video-2.2",
               title: "Module Introduction",
               type: "video",
-              youtubeId: "dQw4w9WgXcQ"
+              youtubeId: "meqZh0uwl2M"
             },
             {
               id: "m2.2-page-1",
@@ -1467,7 +1467,7 @@ CEXs also offer swapping features, often labelled "Convert" on platforms like Bi
                   id: "intro-video-2.3",
                   title: "Module Introduction",
                   type: "video",
-                  youtubeId: "dQw4w9WgXcQ" // Placeholder
+                  youtubeId: "A8Z-W0e7vxQ" // Placeholder
                 },
                 {
                   id: "m2.3-page-1",
@@ -1700,6 +1700,7 @@ The data is there. Anyone can read it. That transparency is one of the things th
               id: "m2.4-page-0",
               title: "Module Introduction",
               type: "video",
+              youtubeId: "L1niiOUzxMY",
               content: "In this module, we look at how thousands of strangers agree on a single version of the truth without a leader. We'll break down Proof of Work, Proof of Stake, and why these mechanisms are the heartbeat of any decentralized network."
             },
             {
@@ -2021,6 +2022,12 @@ Understanding consensus tells you which chains have made which bets, what they'v
           id: "module-2.5",
           title: "Module 2.5 — Blockchain and Incentive Alignment",
           pages: [
+            {
+              id: "m2.5-page-0",
+              title: "Module Introduction",
+              type: "video",
+              youtubeId: "jThX6cgw2WQ"
+            },
             {
               id: "m2.5-page-1",
               title: "Why Would Anyone Mine or Validate?",
