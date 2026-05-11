@@ -18,11 +18,31 @@ export default function Profile() {
   useEffect(() => {
     if (profile?.xp !== undefined) {
       // Calculate rank by counting how many users have strictly more XP
+      // PLUS tie-breaking with xpUpdatedAt for those with same XP
       const fetchRank = async () => {
         try {
-          const q = query(collection(db, 'public_profiles'), where('xp', '>', profile.xp));
-          const snapshot = await getCountFromServer(q);
-          setGlobalRank(snapshot.data().count + 1);
+          // Count users with more XP
+          const qMore = query(collection(db, 'public_profiles'), where('xp', '>', profile.xp));
+          const snapshotMore = await getCountFromServer(qMore);
+          let count = snapshotMore.data().count;
+
+          // Count users with SAME XP but OLDER (smaller) timestamp
+          // Note: Legacy users with no xpUpdatedAt default to 0 and take priority
+          // This secondary logic might require a composite index, so we wrap in try-catch
+          try {
+            const myTime = (profile as any).xpUpdatedAt || 0;
+            const qSame = query(
+              collection(db, 'public_profiles'), 
+              where('xp', '==', profile.xp), 
+              where('xpUpdatedAt', '<', myTime)
+            );
+            const snapshotSame = await getCountFromServer(qSame);
+            count += snapshotSame.data().count;
+          } catch (e) {
+            console.log("Secondary rank count skipped (likely missing index)");
+          }
+
+          setGlobalRank(count + 1);
         } catch (error) {
           console.error("Failed to fetch rank", error);
         }

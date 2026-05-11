@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import posthog from 'posthog-js';
 
 interface UserProfile {
   uid: string;
@@ -9,6 +10,7 @@ interface UserProfile {
   email: string;
   photoURL: string;
   xp: number;
+  xpUpdatedAt?: number;
   completedPages: string[];
   completedModules: string[];
   quizStates: string;
@@ -49,6 +51,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(firebaseUser);
       
       if (firebaseUser) {
+        // Identify in PostHog
+        if (import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN) {
+          posthog.identify(firebaseUser.uid, {
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName
+          });
+        }
+
         // Check if user profile exists in Firestore, if not create it
         const userRef = doc(db, 'users', firebaseUser.uid);
         const publicRef = doc(db, 'public_profiles', firebaseUser.uid);
@@ -112,6 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         }
       } else {
+        if (import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN) {
+          posthog.reset();
+        }
         setProfile(null);
         setLoading(false);
       }

@@ -153,13 +153,19 @@ export default function Course() {
 
     try {
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, updates);
+      const profileUpdates = { ...updates, xpUpdatedAt: updates.xp !== undefined ? Date.now() : undefined };
+      
+      // Filter out undefined values
+      Object.keys(profileUpdates).forEach(key => profileUpdates[key] === undefined && delete profileUpdates[key]);
+      
+      await updateDoc(userRef, profileUpdates);
       
       // If XP changed (or if it's the tester), update public profile
       if (updates.xp !== undefined) {
         const publicRef = doc(db, 'public_profiles', user.uid);
         await setDoc(publicRef, { 
           xp: updates.xp,
+          xpUpdatedAt: Date.now(),
           displayName: profile?.displayName || user.displayName || 'Blocknaut',
           photoURL: profile?.photoURL || user.photoURL || '',
           country: profile?.country || 'Global'
@@ -336,22 +342,33 @@ export default function Course() {
           const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
           const filteredDocs = snapshot.docs.filter(doc => doc.id !== TESTER_UID);
           
-          const users = filteredDocs.map((doc, index) => {
+          const users = filteredDocs.map((doc) => {
             const data = doc.data();
             const fullName = data.displayName || 'Blocknaut';
             const firstName = fullName.split(' ')[0];
             
             const xp = data.xp || 0;
+            const xpUpdatedAt = data.xpUpdatedAt || 0;
 
             return {
-              rank: index + 1,
               name: firstName,
               xp: xp,
+              xpUpdatedAt: xpUpdatedAt,
               photoURL: data.photoURL,
               country: data.country || 'Global'
             };
           });
-          setLeaderboard(users);
+
+          // Tie-breaker sort: Same XP? Older update wins (lower timestamp)
+          users.sort((a, b) => {
+            if (b.xp !== a.xp) return b.xp - a.xp;
+            return (a.xpUpdatedAt || 0) - (b.xpUpdatedAt || 0);
+          });
+
+          // Assign ranks after sorting
+          const rankedUsers = users.map((u, i) => ({ ...u, rank: i + 1 }));
+
+          setLeaderboard(rankedUsers);
         }).catch(err => console.error("Error fetching leaderboard", err));
       });
     }

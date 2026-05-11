@@ -14,18 +14,23 @@ export default function Leaderboard() {
 
   const fetchLeaderboard = async () => {
     try {
-      const q = query(collection(db, 'public_profiles'), orderBy('xp', 'desc'), limit(50));
+      const q = query(
+        collection(db, 'public_profiles'), 
+        orderBy('xp', 'desc'),
+        limit(50)
+      );
       const snapshot = await getDocs(q);
       const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
       
       const filteredDocs = snapshot.docs.filter(doc => doc.id !== TESTER_UID);
       
-      const users = filteredDocs.map((doc, index) => {
+      const users = filteredDocs.map((doc) => {
         const data = doc.data();
         const fullName = data.displayName || 'Blocknaut';
         const firstName = fullName.split(' ')[0];
         
         const xp = data.xp || 0;
+        const xpUpdatedAt = data.xpUpdatedAt || 0;
         const isUser = user?.uid === doc.id;
         
         return {
@@ -33,13 +38,23 @@ export default function Leaderboard() {
           name: firstName,
           country: data.country || "Global",
           xp: xp,
-          rank: index + 1,
+          xpUpdatedAt: xpUpdatedAt,
           trend: "up", // Mock trend
           isUser: isUser,
           photoURL: data.photoURL
         };
       });
-      setLeaderboard(users);
+
+      // Tie-breaker sort: Same XP? Older update wins (lower timestamp)
+      users.sort((a, b) => {
+        if (b.xp !== a.xp) return b.xp - a.xp;
+        return (a.xpUpdatedAt || 0) - (b.xpUpdatedAt || 0);
+      });
+
+      // Assign ranks after sorting
+      const rankedUsers = users.map((u, i) => ({ ...u, rank: i + 1 }));
+      
+      setLeaderboard(rankedUsers);
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
     } finally {
