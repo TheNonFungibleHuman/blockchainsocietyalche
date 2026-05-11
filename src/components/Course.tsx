@@ -227,8 +227,8 @@ export default function Course() {
     
     const page = allPages[pageIndex];
     
-    // 1. Strict Lock: Part 2+ is TOTALLY locked for non-testers
-    if (page.partId && page.partId !== 'part-1') {
+    // 1. Strict Lock: Part 3+ is TOTALLY locked for non-testers (Part 1 and 2 are unlocked)
+    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2') {
       return true;
     }
 
@@ -243,7 +243,7 @@ export default function Course() {
       return true;
     }
 
-    // 3. Sequential lock: Previous page in Part 1 must be completed
+    // 3. Sequential lock: Previous page must be completed
     const prevPage = allPages[pageIndex - 1];
     const prevGlobalId = prevPage.moduleId ? `${prevPage.moduleId}-${prevPage.pageId}` : prevPage.pageId;
     const isPrevCompleted = completedPages.includes(prevGlobalId) || completedPages.includes(prevPage.pageId);
@@ -279,11 +279,11 @@ export default function Course() {
     if (currentIndex < allPages.length - 1) {
       const nextIndex = currentIndex + 1;
       
-      // Strict Lock: Prevent non-testers from navigating into Part 2+
+      // Strict Lock: Prevent non-testers from navigating into Part 3+
       const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
       if (!isTester) {
         const nextPage = allPages[nextIndex];
-        if (nextPage.partId && nextPage.partId !== 'part-1') {
+        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2') {
           // Stay on current page or show "Coming Soon" if we want, but for now we just don't navigate
           return;
         }
@@ -614,8 +614,8 @@ export default function Course() {
                 <div className="space-y-2">
                   <h2 className="font-serif text-3xl tracking-tight">Strategic Hold</h2>
                   <p className="text-zinc-500 max-w-md mx-auto text-sm leading-relaxed">
-                    This sector is currently restricted. Complete all preceding modules in Part 1 and await further authorization. 
-                    Part 2 and 3 are reserved for the next phase of the Blocknauts mission.
+                    This sector is currently restricted. Complete all preceding modules and await further authorization. 
+                    Part 3 is reserved for the next phase of the Blocknauts mission.
                   </p>
                 </div>
                 <button 
