@@ -32,18 +32,29 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email', 'xp', 'createdAt']) &&
-             data.keys().size() <= 30 && 
-             data.uid is string && data.uid.size() > 0 && data.uid.size() < 100 &&
-             data.email is string && data.email.size() < 150 &&
+      return data.keys().hasAll(['uid', 'email', 'xp']) &&
+             data.keys().size() <= 40 && 
+             data.uid is string && data.uid.size() > 0 && 
+             data.email is string && data.email.size() > 0 &&
              data.xp is number && data.xp >= 0 &&
+             (!('createdAt' in data) || (data.createdAt is string)) &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
              (!('country' in data) || (data.country is string && data.country.size() <= 100)) &&
              (!('welcomeWatched' in data) || (data.welcomeWatched is bool)) &&
              (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1000)) &&
-             (!('completedPages' in data) || (data.completedPages is list && data.completedPages.size() <= 1000)) &&
+             (!('completedPages' in data) || (data.completedPages is list && data.completedPages.size() <= 2000)) &&
              (!('completedModules' in data) || (data.completedModules is list && data.completedModules.size() <= 500)) &&
-             (!('quizStates' in data) || (data.quizStates is string && data.quizStates.size() <= 50000));
+             (!('quizStates' in data) || (data.quizStates is string && data.quizStates.size() <= 100000)) &&
+             (!('xpUpdatedAt' in data) || (data.xpUpdatedAt is number));
+    }
+
+    function isValidPublicProfile(data) {
+      return data.keys().hasAll(['xp']) &&
+             data.xp is number &&
+             (!('displayName' in data) || (data.displayName is string)) &&
+             (!('photoURL' in data) || (data.photoURL is string)) &&
+             (!('country' in data) || (data.country is string)) &&
+             (!('xpUpdatedAt' in data) || (data.xpUpdatedAt is number));
     }
 
     // ===============================================================
@@ -57,7 +68,7 @@ service cloud.firestore {
 
     match /public_profiles/{userId} {
       allow read: if true; 
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidPublicProfile(incoming());
     }
   }
 }

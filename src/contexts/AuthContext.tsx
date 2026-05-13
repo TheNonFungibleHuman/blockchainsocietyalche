@@ -85,30 +85,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               quizStates: '{}',
               createdAt: new Date().toISOString(),
               country: 'Global',
-              welcomeWatched: false
+              welcomeWatched: false,
+              xpUpdatedAt: Date.now()
             };
             await setDoc(userRef, newProfile);
             await setDoc(publicRef, {
               displayName,
               photoURL,
               xp: 0,
-              country: 'Global'
+              country: 'Global',
+              xpUpdatedAt: Date.now()
             });
             setProfile(newProfile);
           } else {
             const existingProfile = docSnap.data() as UserProfile;
-            setProfile(existingProfile);
+            
+            // Migration: Ensure older users have all required fields for the new rules/features
+            const needsMigration = !existingProfile.createdAt || 
+                                  !existingProfile.uid || 
+                                  existingProfile.xpUpdatedAt === undefined ||
+                                  existingProfile.completedPages === undefined ||
+                                  existingProfile.quizStates === undefined;
+
+            if (needsMigration) {
+              const migratedProfile = {
+                ...existingProfile,
+                uid: existingProfile.uid || firebaseUser.uid,
+                createdAt: existingProfile.createdAt || new Date().toISOString(),
+                xpUpdatedAt: existingProfile.xpUpdatedAt || Date.now(),
+                completedPages: existingProfile.completedPages || [],
+                completedModules: existingProfile.completedModules || [],
+                quizStates: existingProfile.quizStates || '{}',
+                displayName: existingProfile.displayName || displayName,
+                photoURL: existingProfile.photoURL || photoURL,
+                email: existingProfile.email || email,
+                country: existingProfile.country || 'Global'
+              };
+              await setDoc(userRef, migratedProfile, { merge: true });
+              setProfile(migratedProfile as UserProfile);
+            } else {
+              setProfile(existingProfile);
+            }
             
             // Sync public profile if missing or outdated
+            const publicData = publicSnap.exists() ? publicSnap.data() : null;
             if (!publicSnap.exists() || 
-                publicSnap.data().displayName !== displayName || 
-                publicSnap.data().photoURL !== photoURL ||
-                publicSnap.data().country !== (existingProfile.country || 'Global')) {
+                publicData?.displayName !== displayName || 
+                publicData?.photoURL !== photoURL ||
+                publicData?.country !== (existingProfile.country || 'Global') ||
+                publicData?.xp !== existingProfile.xp ||
+                publicData?.xpUpdatedAt === undefined) {
               await setDoc(publicRef, {
                 displayName,
                 photoURL,
                 xp: existingProfile.xp || 0,
-                country: existingProfile.country || 'Global'
+                country: existingProfile.country || 'Global',
+                xpUpdatedAt: existingProfile.xpUpdatedAt || Date.now()
               }, { merge: true });
             }
           }
@@ -143,14 +175,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
-        setProfile(doc.data() as UserProfile);
+        const data = doc.data();
+        // Ensure critical arrays and strings exist to prevent component crashes
+        const safeData = {
+          ...data,
+          completedPages: data.completedPages || [],
+          completedModules: data.completedModules || [],
+          quizStates: data.quizStates || '{}'
+        };
+        setProfile(safeData as UserProfile);
       }
     }, (error) => {
-      try {
-        handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
-      } catch (e) {
-        console.error("Authenticated onSnapshot listener error:", e);
-      }
+      // Log the error but don't re-throw to prevent crashing the subscription loop
+      // and causing a "black screen" for the user.
+      console.error("Firestore onSnapshot Error:", error);
     });
 
     return () => unsubscribe();
