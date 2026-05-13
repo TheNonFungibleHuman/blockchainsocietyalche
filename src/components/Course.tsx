@@ -7,7 +7,7 @@ import { courseData } from '../data/courseData';
 import Navbar from './Navbar';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import CexDexDemo from './demos/CexDexDemo';
 import TransactionLifecycleDemo from './demos/TransactionLifecycleDemo';
 import ConsensusSimulator from './demos/ConsensusSimulator';
@@ -176,6 +176,12 @@ export default function Course() {
       }
     } catch (error) {
       console.error("Error updating profile", error);
+      try {
+        handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      } catch (e) {
+        // Log the final JSON error so it appears in the logs
+        console.error("Critical Persistence Failure:", e);
+      }
     }
   };
 

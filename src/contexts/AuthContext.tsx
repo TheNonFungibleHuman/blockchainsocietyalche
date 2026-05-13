@@ -101,28 +101,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const existingProfile = docSnap.data() as UserProfile;
             
             // Migration: Ensure older users have all required fields for the new rules/features
-            const needsMigration = !existingProfile.createdAt || 
-                                  !existingProfile.uid || 
+            const hasRequiredFields = existingProfile.uid && 
+                                     existingProfile.email && 
+                                     existingProfile.xp !== undefined &&
+                                     existingProfile.createdAt;
+            
+            const needsMigration = !hasRequiredFields || 
                                   existingProfile.xpUpdatedAt === undefined ||
                                   existingProfile.completedPages === undefined ||
                                   existingProfile.quizStates === undefined;
 
             if (needsMigration) {
-              const migratedProfile = {
+              const migratedProfile: UserProfile = {
                 ...existingProfile,
                 uid: existingProfile.uid || firebaseUser.uid,
+                email: existingProfile.email || email,
+                xp: existingProfile.xp ?? 0,
                 createdAt: existingProfile.createdAt || new Date().toISOString(),
                 xpUpdatedAt: existingProfile.xpUpdatedAt || Date.now(),
-                completedPages: existingProfile.completedPages || [],
-                completedModules: existingProfile.completedModules || [],
-                quizStates: existingProfile.quizStates || '{}',
+                completedPages: Array.isArray(existingProfile.completedPages) ? existingProfile.completedPages : [],
+                completedModules: Array.isArray(existingProfile.completedModules) ? existingProfile.completedModules : [],
+                quizStates: typeof existingProfile.quizStates === 'string' ? existingProfile.quizStates : JSON.stringify(existingProfile.quizStates || {}),
                 displayName: existingProfile.displayName || displayName,
                 photoURL: existingProfile.photoURL || photoURL,
-                email: existingProfile.email || email,
-                country: existingProfile.country || 'Global'
+                country: existingProfile.country || 'Global',
+                welcomeWatched: existingProfile.welcomeWatched ?? false
               };
-              await setDoc(userRef, migratedProfile, { merge: true });
-              setProfile(migratedProfile as UserProfile);
+              
+              try {
+                await setDoc(userRef, migratedProfile, { merge: true });
+                setProfile(migratedProfile);
+              } catch (err) {
+                console.error("Migration write failed, falling back to local state", err);
+                setProfile(migratedProfile);
+              }
             } else {
               setProfile(existingProfile);
             }
