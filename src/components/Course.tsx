@@ -161,7 +161,9 @@ export default function Course() {
       // Filter out undefined values
       Object.keys(profileUpdates).forEach(key => profileUpdates[key] === undefined && delete profileUpdates[key]);
       
-      await updateDoc(userRef, profileUpdates);
+      // Use setDoc with merge: true instead of updateDoc for better resilience.
+      // This will (re)create the document if it's missing.
+      await setDoc(userRef, profileUpdates, { merge: true });
       
       // If XP changed (or if it's the tester), update public profile
       if (updates.xp !== undefined) {
@@ -268,7 +270,7 @@ export default function Course() {
     if (!user) return;
     try {
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { welcomeWatched: true });
+      await setDoc(userRef, { welcomeWatched: true }, { merge: true });
     } catch (error) {
       console.error("Error setting welcomeWatched", error);
     }

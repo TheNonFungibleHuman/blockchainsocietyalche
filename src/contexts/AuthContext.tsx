@@ -73,7 +73,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const photoURL = firebaseUser.photoURL || '';
           const email = firebaseUser.email || '';
 
+          // CORE REPAIR: If user document is missing, CREATE it.
+          // This fixes users who have Auth but failed initialization.
           if (!docSnap.exists()) {
+            console.log("Profile missing, initializing for UID:", firebaseUser.uid);
             const newProfile: UserProfile = {
               uid: firebaseUser.uid,
               displayName,
@@ -88,30 +91,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               welcomeWatched: false,
               xpUpdatedAt: Date.now()
             };
-            await setDoc(userRef, newProfile);
-            await setDoc(publicRef, {
-              displayName,
-              photoURL,
-              xp: 0,
-              country: 'Global',
-              xpUpdatedAt: Date.now()
-            });
-            setProfile(newProfile);
+            
+            // Use setDoc to ensure creation. Catch errors to prevent "black screen" but alert.
+            try {
+              await setDoc(userRef, newProfile);
+              await setDoc(publicRef, {
+                displayName,
+                photoURL,
+                xp: 0,
+                country: 'Global',
+                xpUpdatedAt: Date.now()
+              });
+              setProfile(newProfile);
+            } catch (writeErr) {
+              console.error("Critical error creating initial profile:", writeErr);
+              // We set profile locally anyway so they can at least use the app, 
+              // but the persist layer (Course.tsx) will try to fix this later with setDoc merge.
+              setProfile(newProfile);
+            }
           } else {
             const existingProfile = docSnap.data() as UserProfile;
             
-            // Migration: Ensure older users have all required fields for the new rules/features
+            // Migration: Ensure older users have all required fields
             const hasRequiredFields = existingProfile.uid && 
                                      existingProfile.email && 
                                      existingProfile.xp !== undefined &&
                                      existingProfile.createdAt;
             
-            const needsMigration = !hasRequiredFields || 
-                                  existingProfile.xpUpdatedAt === undefined ||
-                                  existingProfile.completedPages === undefined ||
-                                  existingProfile.quizStates === undefined;
-
-            if (needsMigration) {
+            if (!hasRequiredFields) {
+              console.log("Migration required for UID:", firebaseUser.uid);
               const migratedProfile: UserProfile = {
                 ...existingProfile,
                 uid: existingProfile.uid || firebaseUser.uid,
@@ -132,28 +140,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await setDoc(userRef, migratedProfile, { merge: true });
                 setProfile(migratedProfile);
               } catch (err) {
-                console.error("Migration write failed, falling back to local state", err);
+                console.error("Migration write failed:", err);
                 setProfile(migratedProfile);
               }
             } else {
               setProfile(existingProfile);
             }
             
-            // Sync public profile if missing or outdated
+            // PUBLIC PROFILE REPAIR: If public record is missing or outdated, SYNC it.
+            // This specifically fixes the reporter's issue: "Uid missing from public profiles page"
             const publicData = publicSnap.exists() ? publicSnap.data() : null;
             if (!publicSnap.exists() || 
-                publicData?.displayName !== displayName || 
-                publicData?.photoURL !== photoURL ||
-                publicData?.country !== (existingProfile.country || 'Global') ||
-                publicData?.xp !== existingProfile.xp ||
-                publicData?.xpUpdatedAt === undefined) {
-              await setDoc(publicRef, {
-                displayName,
-                photoURL,
-                xp: existingProfile.xp || 0,
-                country: existingProfile.country || 'Global',
-                xpUpdatedAt: existingProfile.xpUpdatedAt || Date.now()
-              }, { merge: true });
+                publicData?.displayName !== existingProfile.displayName || 
+                publicData?.photoURL !== existingProfile.photoURL ||
+                publicData?.xp !== existingProfile.xp) {
+              
+              console.log("Syncing public profile for UID:", firebaseUser.uid);
+              try {
+                await setDoc(publicRef, {
+                  displayName: existingProfile.displayName || displayName,
+                  photoURL: existingProfile.photoURL || photoURL,
+                  xp: existingProfile.xp || 0,
+                  country: existingProfile.country || 'Global',
+                  xpUpdatedAt: existingProfile.xpUpdatedAt || Date.now()
+                }, { merge: true });
+              } catch (publicErr) {
+                console.error("Failed to sync public profile:", publicErr);
+              }
             }
           }
         } catch (error) {

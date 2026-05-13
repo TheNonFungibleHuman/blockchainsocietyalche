@@ -4,7 +4,7 @@ import { Settings as SettingsIcon, User, Mail, Shield, Check, Loader2, Globe } f
 import Navbar from './Navbar';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { COUNTRIES } from '../constants/countries';
 
@@ -43,14 +43,16 @@ export default function Settings() {
       const userRef = doc(db, 'users', user.uid);
       const publicRef = doc(db, 'public_profiles', user.uid);
       
-      await updateDoc(userRef, { 
+      // Use setDoc with merge: true for better durability
+      await setDoc(userRef, { 
         displayName: displayName.trim(),
         country: country
-      });
-      await updateDoc(publicRef, { 
+      }, { merge: true });
+      
+      await setDoc(publicRef, { 
         displayName: displayName.trim(),
         country: country
-      });
+      }, { merge: true });
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

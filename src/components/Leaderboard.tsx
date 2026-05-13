@@ -17,7 +17,7 @@ export default function Leaderboard() {
       const q = query(
         collection(db, 'public_profiles'), 
         orderBy('xp', 'desc'),
-        limit(50)
+        limit(70)
       );
       const snapshot = await getDocs(q);
       const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
