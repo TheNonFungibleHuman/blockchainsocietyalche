@@ -30,6 +30,9 @@ export default function Course() {
   const [expandedParts, setExpandedParts] = useState<string[]>([courseData.parts[0].id]);
   const [rightPaneTab, setRightPaneTab] = useState<'glossary' | 'resources' | 'leaderboard' | null>(null);
 
+  // Leaderboard Data
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
   // Progress & Gamification State (Local state synced with Firebase)
   const [completedPages, setCompletedPages] = useState<string[]>([]);
   const [userXP, setUserXP] = useState(0); 
@@ -210,6 +213,47 @@ export default function Course() {
     }
   }, [isDark]);
 
+  // Fetch Leaderboard Data
+  useEffect(() => {
+    if (rightPaneTab === 'leaderboard') {
+      import('firebase/firestore').then(({ collection, query, orderBy, limit, getDocs }) => {
+        const q = query(collection(db, 'public_profiles'), orderBy('xp', 'desc'), limit(10));
+        getDocs(q).then(snapshot => {
+          const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
+          const filteredDocs = snapshot.docs.filter(doc => doc.id !== TESTER_UID);
+          
+          const users = filteredDocs.map((doc) => {
+            const data = doc.data();
+            const fullName = data.displayName || 'Blocknaut';
+            const firstName = fullName.split(' ')[0];
+            
+            const xp = data.xp || 0;
+            const xpUpdatedAt = data.xpUpdatedAt || 0;
+
+            return {
+              name: firstName,
+              xp: xp,
+              xpUpdatedAt: xpUpdatedAt,
+              photoURL: data.photoURL,
+              country: data.country || 'Global'
+            };
+          });
+
+          // Tie-breaker sort: Same XP? Older update wins (lower timestamp)
+          users.sort((a, b) => {
+            if (b.xp !== a.xp) return b.xp - a.xp;
+            return (a.xpUpdatedAt || 0) - (b.xpUpdatedAt || 0);
+          });
+
+          // Assign ranks after sorting
+          const rankedUsers = users.map((u, i) => ({ ...u, rank: i + 1 }));
+
+          setLeaderboard(rankedUsers);
+        }).catch(err => console.error("Error fetching leaderboard", err));
+      });
+    }
+  }, [rightPaneTab]);
+
   if (authLoading) {
     return null;
   }
@@ -331,48 +375,6 @@ export default function Course() {
 
   // Calculate overall progress
   const progressPercentage = Math.round((completedPages.length / allPages.length) * 100);
-
-  // Fetch Leaderboard Data
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  useEffect(() => {
-    if (rightPaneTab === 'leaderboard') {
-      import('firebase/firestore').then(({ collection, query, orderBy, limit, getDocs }) => {
-        const q = query(collection(db, 'public_profiles'), orderBy('xp', 'desc'), limit(10));
-        getDocs(q).then(snapshot => {
-          const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
-          const filteredDocs = snapshot.docs.filter(doc => doc.id !== TESTER_UID);
-          
-          const users = filteredDocs.map((doc) => {
-            const data = doc.data();
-            const fullName = data.displayName || 'Blocknaut';
-            const firstName = fullName.split(' ')[0];
-            
-            const xp = data.xp || 0;
-            const xpUpdatedAt = data.xpUpdatedAt || 0;
-
-            return {
-              name: firstName,
-              xp: xp,
-              xpUpdatedAt: xpUpdatedAt,
-              photoURL: data.photoURL,
-              country: data.country || 'Global'
-            };
-          });
-
-          // Tie-breaker sort: Same XP? Older update wins (lower timestamp)
-          users.sort((a, b) => {
-            if (b.xp !== a.xp) return b.xp - a.xp;
-            return (a.xpUpdatedAt || 0) - (b.xpUpdatedAt || 0);
-          });
-
-          // Assign ranks after sorting
-          const rankedUsers = users.map((u, i) => ({ ...u, rank: i + 1 }));
-
-          setLeaderboard(rankedUsers);
-        }).catch(err => console.error("Error fetching leaderboard", err));
-      });
-    }
-  }, [rightPaneTab]);
 
   return (
     <div className="h-screen bg-[#050505] text-white transition-colors duration-500 font-sans flex flex-col overflow-hidden relative">
