@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Home from './components/Home';
 import Blocknauts from './components/Blocknauts';
@@ -14,6 +14,28 @@ import { useAuth } from './contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rocket, Sparkles, AlertCircle, RefreshCcw } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
+
+declare global {
+  interface Window {
+    gtag: (command: string, id: string, config?: any) => void;
+  }
+}
+
+// Analytics Tracker Component
+function AnalyticsTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const gaId = import.meta.env.VITE_PUBLIC_GA_ID || 'G-VJJR6M3KP7';
+    if (window.gtag) {
+      window.gtag('config', gaId, {
+        page_path: location.pathname + location.search,
+      });
+    }
+  }, [location]);
+
+  return null;
+}
 
 function ErrorFallback({ error, resetErrorBoundary }: any) {
   return (
@@ -131,6 +153,7 @@ export default function App() {
           {loading && <LoadingScreen />}
         </AnimatePresence>
         <BrowserRouter>
+          <AnalyticsTracker />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/blocknauts" element={<Blocknauts />} />
