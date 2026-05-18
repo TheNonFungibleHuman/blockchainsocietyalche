@@ -13,6 +13,9 @@ import TransactionLifecycleDemo from './demos/TransactionLifecycleDemo';
 import ConsensusSimulator from './demos/ConsensusSimulator';
 import IncentiveDesignLab from './demos/IncentiveDesignLab';
 import EscrowSimulator from './demos/EscrowSimulator';
+import TokenSupplySimulator from './demos/TokenSupplySimulator';
+import NFTMetadataInspector from './demos/NFTMetadataInspector';
+import BridgeFlowSimulator from './demos/BridgeFlowSimulator';
 
 export default function Course() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -285,8 +288,8 @@ export default function Course() {
     
     const page = allPages[pageIndex];
     
-    // 1. Strict Lock: Part 3+ is TOTALLY locked for non-testers (Part 1 and 2 are unlocked)
-    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2') {
+    // 1. Strict Lock: Allow Part 1, 2, and 3
+    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3') {
       return true;
     }
 
@@ -337,11 +340,11 @@ export default function Course() {
     if (currentIndex < allPages.length - 1) {
       const nextIndex = currentIndex + 1;
       
-      // Strict Lock: Prevent non-testers from navigating into Part 3+
+      // Strict Lock: Prevent non-testers from navigating into restricted parts
       const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
       if (!isTester) {
         const nextPage = allPages[nextIndex];
-        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2') {
+        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3') {
           // Stay on current page or show "Coming Soon" if we want, but for now we just don't navigate
           return;
         }
@@ -642,7 +645,6 @@ export default function Course() {
                   <h2 className="font-serif text-3xl tracking-tight">Strategic Hold</h2>
                   <p className="text-zinc-500 max-w-md mx-auto text-sm leading-relaxed">
                     This sector is currently restricted. Complete all preceding modules and await further authorization. 
-                    Part 3 is reserved for the next phase of the Blocknauts mission.
                   </p>
                 </div>
                 <button 
@@ -714,6 +716,12 @@ export default function Course() {
                       <IncentiveDesignLab />
                     ) : (currentPageData as any).componentId === 'EscrowSimulator' ? (
                       <EscrowSimulator />
+                    ) : (currentPageData as any).componentId === 'token-supply-simulator' ? (
+                      <TokenSupplySimulator />
+                    ) : (currentPageData as any).componentId === 'nft-metadata-inspector' ? (
+                      <NFTMetadataInspector />
+                    ) : (currentPageData as any).componentId === 'bridge-flow-simulator' ? (
+                      <BridgeFlowSimulator />
                     ) : (
                       <NetworkDemo />
                     )
