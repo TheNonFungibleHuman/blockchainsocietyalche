@@ -307,7 +307,12 @@ export default function Course() {
     // 3. Sequential lock: Previous page must be completed
     const prevPage = allPages[pageIndex - 1];
     const prevGlobalId = prevPage.moduleId ? `${prevPage.moduleId}-${prevPage.pageId}` : prevPage.pageId;
-    const isPrevCompleted = completedPages.includes(prevGlobalId) || completedPages.includes(prevPage.pageId);
+    let isPrevCompleted = completedPages.includes(prevGlobalId) || completedPages.includes(prevPage.pageId);
+    
+    // Fallback: If the previous page is in a module whose quiz is already finished, treat it as completed
+    if (!isPrevCompleted && prevPage.moduleId && quizStates[prevPage.moduleId]?.finished) {
+      isPrevCompleted = true;
+    }
     
     if (!isPrevCompleted) return true;
 
