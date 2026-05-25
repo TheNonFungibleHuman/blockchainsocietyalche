@@ -288,8 +288,8 @@ export default function Course() {
     
     const page = allPages[pageIndex];
     
-    // 1. Strict Lock: Allow Part 1, 2, and 3
-    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3') {
+    // 1. Strict Lock: Allow Part 1, 2, 3, and 4
+    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3' && page.partId !== 'part-4') {
       return true;
     }
 
@@ -349,7 +349,7 @@ export default function Course() {
       const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
       if (!isTester) {
         const nextPage = allPages[nextIndex];
-        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3') {
+        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3' && nextPage.partId !== 'part-4') {
           // Stay on current page or show "Coming Soon" if we want, but for now we just don't navigate
           return;
         }
@@ -433,13 +433,13 @@ export default function Course() {
             </div>
             
             <div className="mb-6">
-               <div className="text-[10px] font-bold text-zinc-500 mb-1 uppercase tracking-widest">Enrollment 01</div>
-               <h2 className="font-serif text-2xl tracking-tight leading-tight">{courseData.title}</h2>
+               <div className="text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-widest">Enrollment 01</div>
+               <h2 className="font-serif text-2xl tracking-tight leading-tight text-white">{courseData.title}</h2>
             </div>
 
             <div className="space-y-3">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                <span className="text-zinc-500">Sync Status</span>
+                <span className="text-zinc-400">Sync Status</span>
                 <span className="text-white">{progressPercentage}%</span>
               </div>
               <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
@@ -474,8 +474,8 @@ export default function Course() {
                     isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
                   } ${
                     isActive 
-                      ? 'bg-blue-500/10 dark:bg-blue-900/30 text-zinc-900 dark:text-white font-bold border-2 border-blue-500/50 shadow-lg' 
-                      : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400'
+                      ? 'bg-blue-900/30 text-white font-bold border-2 border-blue-500/50 shadow-lg' 
+                      : 'hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   {isLocked ? (
@@ -516,7 +516,7 @@ export default function Course() {
                         <div className="pl-4 pr-2 py-2 flex flex-col gap-1 border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 mt-1">
                           {part.modules.map((module) => (
                             <div key={module.id} className="mb-2">
-                              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1 pl-2">
+                              <div className="text-xs font-semibold text-zinc-400 mb-1 pl-2">
                                 {module.title}
                               </div>
                               {module.pages.map((page) => {
@@ -541,10 +541,10 @@ export default function Course() {
                                     disabled={isLocked}
                                     className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${
                                       isActive 
-                                        ? 'bg-blue-500/10 dark:bg-blue-900/30 text-zinc-900 dark:text-white font-medium hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-red-500/10' 
+                                        ? 'bg-blue-900/30 text-white font-medium hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-red-500/10' 
                                         : isLocked 
-                                          ? 'text-zinc-400 dark:text-zinc-600'
-                                          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:bg-gradient-to-r hover:from-blue-500/5 hover:to-red-500/5'
+                                          ? 'text-zinc-600'
+                                          : 'hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 hover:bg-gradient-to-r hover:from-blue-500/5 hover:to-red-500/5'
                                     }`}
                                   >
                                     {isLocked ? (
@@ -600,11 +600,11 @@ export default function Course() {
                 </button>
               )}
 
-              <div className="flex flex-col overflow-hidden">
-                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 leading-none mb-1.5 truncate">
+              <div className="flex flex-col overflow-hidden text-white">
+                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 leading-none mb-1.5 truncate">
                    {activeModule ? currentModuleData?.title : 'Core Orientation'}
                  </span>
-                 <span className="font-serif text-lg truncate max-w-[150px] sm:max-w-xs md:max-w-md leading-none">
+                 <span className="font-serif text-lg truncate max-w-[150px] sm:max-w-xs md:max-w-md leading-none text-white">
                    {currentPageData?.title}
                  </span>
               </div>
@@ -647,8 +647,8 @@ export default function Course() {
                   <LockKey size={40} weight="fill" className="text-zinc-500 relative z-10" />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="font-serif text-3xl tracking-tight">Strategic Hold</h2>
-                  <p className="text-zinc-500 max-w-md mx-auto text-sm leading-relaxed">
+                  <h2 className="font-serif text-3xl tracking-tight text-white">Strategic Hold</h2>
+                  <p className="text-zinc-400 max-w-md mx-auto text-sm leading-relaxed">
                     This sector is currently restricted. Complete all preceding modules and await further authorization. 
                   </p>
                 </div>
@@ -671,7 +671,7 @@ export default function Course() {
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-gradient mb-4 block">
                     {activeModule ? currentModuleData?.title : 'Core Orientation'}
                   </span>
-                  <h1 className="font-serif text-4xl md:text-6xl tracking-tight leading-[1.1] mb-8">
+                  <h1 className="font-serif text-4xl md:text-6xl tracking-tight leading-[1.1] mb-8 text-white">
                     {currentPageData?.title}
                   </h1>
                 </motion.div>
@@ -679,11 +679,11 @@ export default function Course() {
                 <div className="flex-1">
                   {currentPageData?.type === 'interactive' ? (
                     (currentPageData as any).componentId === 'SolscanIframe' ? (
-                      <div className="w-full h-[600px] border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col bg-zinc-50 dark:bg-zinc-900/50">
-                        <div className="p-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                      <div className="w-full h-[600px] border border-white/5 rounded-xl overflow-hidden flex flex-col bg-zinc-950">
+                        <div className="p-4 bg-[#080808] border-b border-white/5 flex items-center justify-between">
                           <div>
-                            <h3 className="font-medium text-sm mb-1">Live Blockchain Explorer</h3>
-                            <p className="text-xs text-zinc-500">Inspect real-time transactions happening on the Solana blockchain.</p>
+                            <h3 className="font-medium text-sm mb-1 text-white">Live Blockchain Explorer</h3>
+                            <p className="text-xs text-zinc-400">Inspect real-time transactions happening on the Solana blockchain.</p>
                           </div>
                           <a 
                             href="https://solscan.io/" 
@@ -698,8 +698,8 @@ export default function Course() {
                         <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
                           <Shield className="w-8 h-8 text-blue-500" />
                         </div>
-                        <h4 className="text-lg font-medium mb-2">Security Restriction</h4>
-                        <p className="text-sm text-zinc-500 max-w-md mb-6">
+                        <h4 className="text-lg font-medium mb-2 text-white">Security Restriction</h4>
+                        <p className="text-sm text-zinc-400 max-w-md mb-6">
                           For security reasons, Solscan (like most financial platforms) prevents its website from being embedded inside other applications to protect users from clickjacking attacks.
                         </p>
                         <a 
@@ -779,11 +779,11 @@ export default function Course() {
                           className={(currentPageData as any).isWelcome ? "absolute inset-0 w-full h-full z-0" : "relative z-0"}
                         ></iframe>
                       </div>
-                      <div className="bg-zinc-50 dark:bg-zinc-900/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                        <h3 className="font-medium mb-2 flex items-center gap-2">
+                      <div className="bg-zinc-905/30 p-6 rounded-2xl border border-white/5">
+                        <h3 className="font-medium mb-2 flex items-center gap-2 text-white">
                            <PlayCircle size={20} className="text-blue-500" /> {(currentPageData as any).isWelcome ? 'Official Onboarding' : 'Tutorial Information'}
                         </h3>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        <p className="text-sm text-zinc-400 leading-relaxed">
                           {(currentPageData as any).isWelcome 
                             ? "This video is the official introduction and onboarding into the course. Watch the video carefully to understand the foundations of what it means to take the Blockchain 101 course, a guide to this LMS, and to unlock the full curriculum."
                             : "This introductory video covers the key concepts you'll be exploring in this module. If you prefer to watch videos, this can serve as the course content before you attempt the quiz. The course content on the pages are more explanatory and you can go through if you prefer to read or go deeper into the subject"}
@@ -791,21 +791,21 @@ export default function Course() {
                       </div>
                     </div>
                   ) : (
-                    <div className="prose prose-zinc dark:prose-invert prose-lg max-w-none">
+                    <div className="prose prose-zinc prose-invert prose-lg max-w-none">
                       <ReactMarkdown
                         components={{
                           p: ({ children }) => (
-                            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed mb-6">
+                            <p className="text-zinc-300 leading-relaxed mb-6">
                               {children}
                             </p>
                           ),
                           ul: ({ children }) => (
-                            <ul className="list-disc pl-6 mb-6 space-y-2 text-zinc-700 dark:text-zinc-300">
+                            <ul className="list-disc pl-6 mb-6 space-y-2 text-zinc-300">
                               {children}
                             </ul>
                           ),
                           ol: ({ children }) => (
-                            <ol className="list-decimal pl-6 mb-6 space-y-2 text-zinc-700 dark:text-zinc-300">
+                            <ol className="list-decimal pl-6 mb-6 space-y-2 text-zinc-300">
                               {children}
                             </ol>
                           ),
@@ -815,12 +815,12 @@ export default function Course() {
                             </li>
                           ),
                           h3: ({ children }) => (
-                            <h3 className="font-bold text-xl mb-4 mt-8 text-zinc-900 dark:text-white">
+                            <h3 className="font-bold text-xl mb-4 mt-8 text-white">
                               {children}
                             </h3>
                           ),
                           strong: ({ children }) => (
-                            <strong className="font-semibold text-zinc-900 dark:text-white">
+                            <strong className="font-semibold text-white">
                               {children}
                             </strong>
                           ),
@@ -854,7 +854,7 @@ export default function Course() {
                               );
                             }
                             return (
-                              <code className="bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm font-mono px-1.5 py-0.5 rounded break-words" {...props}>
+                              <code className="bg-zinc-900 text-zinc-200 text-sm font-mono px-1.5 py-0.5 rounded break-words border border-white/5" {...props}>
                                 {children}
                               </code>
                             );
@@ -873,7 +873,7 @@ export default function Course() {
                     <button
                       onClick={handlePrev}
                       disabled={currentIndex === 0}
-                      className="px-6 py-3 rounded-full text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="px-6 py-3 rounded-full text-sm font-medium text-zinc-400 hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       Previous
                     </button>
@@ -898,10 +898,10 @@ export default function Course() {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: window.innerWidth < 768 ? '100%' : 350, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="fixed md:relative inset-y-0 right-0 z-50 md:z-auto md:shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 md:bg-zinc-50 md:dark:bg-zinc-900/30 overflow-hidden flex flex-col shadow-2xl md:shadow-none"
+              className="fixed md:relative inset-y-0 right-0 z-50 md:z-auto md:shrink-0 border-l border-white/5 bg-[#080808] overflow-hidden flex flex-col shadow-2xl md:shadow-none"
             >
-              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-zinc-900">
-                <h3 className="font-medium capitalize flex items-center gap-2">
+              <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#080808]">
+                <h3 className="font-medium capitalize flex items-center gap-2 text-white">
                   {rightPaneTab === 'glossary' && <BookBookmark className="text-blue-500" />}
                   {rightPaneTab === 'resources' && <FileText className="text-blue-500" />}
                   {rightPaneTab === 'leaderboard' && <Trophy className="text-orange-500" />}
@@ -909,7 +909,7 @@ export default function Course() {
                 </h3>
                 <button 
                   onClick={() => setRightPaneTab(null)}
-                  className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-md hover:bg-white/5 text-zinc-400 transition-colors cursor-pointer"
                 >
                   <XIcon size={16} />
                 </button>
@@ -935,15 +935,15 @@ export default function Course() {
                 {rightPaneTab === 'leaderboard' && (
                   <div className="space-y-4">
                     {leaderboard.length > 0 ? leaderboard.map((user) => (
-                      <div key={user.rank} className="flex items-center justify-between p-3 rounded-lg hover:bg-white dark:hover:bg-zinc-800 transition-colors">
+                      <div key={user.rank} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors">
                         <div className="flex items-center gap-3">
-                          <span className={`text-sm font-medium w-4 ${user.rank <= 3 ? 'text-orange-500' : 'text-zinc-500'}`}>{user.rank}</span>
-                          <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-medium overflow-hidden">
+                          <span className={`text-sm font-medium w-4 ${user.rank <= 3 ? 'text-orange-500' : 'text-zinc-400'}`}>{user.rank}</span>
+                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-medium overflow-hidden text-white">
                             {user.photoURL ? <img src={user.photoURL} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : user.name.charAt(0)}
                           </div>
-                          <span className="text-sm font-medium">{user.name}</span>
+                          <span className="text-sm font-medium text-white">{user.name}</span>
                         </div>
-                        <span className="text-xs font-mono text-zinc-500">{user.xp} XP</span>
+                        <span className="text-xs font-mono text-zinc-400">{user.xp} XP</span>
                       </div>
                     )) : (
                       <div className="flex flex-col items-center justify-center py-12 gap-4">
@@ -998,12 +998,12 @@ function Quiz({
 
   if (finished) {
     return (
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full border border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 bg-zinc-50 dark:bg-zinc-900/50 text-center">
-        <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-500/20">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full border border-white/5 rounded-3xl p-12 bg-zinc-900/50 text-center">
+        <div className="w-24 h-24 bg-emerald-950/40 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-500/20">
           <Trophy size={48} weight="duotone" />
         </div>
-        <h3 className="text-4xl font-serif mb-4">Module Complete!</h3>
-        <p className="text-zinc-500 mb-10 text-lg">You've successfully passed the quiz and earned XP.</p>
+        <h3 className="text-4xl font-serif mb-4 text-white">Module Complete!</h3>
+        <p className="text-zinc-300 mb-10 text-lg">You've successfully passed the quiz and earned XP.</p>
         <button onClick={onComplete} className="px-8 py-4 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black font-medium transition-all shadow-lg shadow-blue-500/25 hover:scale-105 cursor-pointer hover:bg-gradient-to-r hover:from-blue-600 hover:to-red-600 hover:text-white">
           Continue to Next Module
         </button>
