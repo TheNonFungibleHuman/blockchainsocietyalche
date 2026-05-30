@@ -3698,6 +3698,268 @@ A network that thousands of people depend on cannot allow any single actor to co
               ]
             }
           ]
+        },
+        {
+          id: "module-4.5",
+          title: "Module 4.5 — Staking",
+          pages: [
+            {
+              id: "m4.5-video",
+              title: "Staking Explained",
+              type: "video",
+              youtubeId: "vZ2UZdB07fo",
+              content: "Welcome to Module 4.5. In this module, we will explore consensus staking versus DeFi yield staking, liquid staking with Lido and Rocket Pool, restaking through EigenLayer, and the associated risks like slashing."
+            },
+            {
+              id: "m4.5-page-1",
+              title: "What Staking Is and Why It Exists",
+              content: "Staking means locking up crypto to help run a blockchain network. The network pays you for doing it. But the word “staking” shows up in two different places and they are not the same thing. One keeps a blockchain alive. The other just generates yield inside a DeFi app. You need to know the difference.\n\nThe first kind of staking is **for consensus**. Proof-of-stake blockchains like Ethereum, Solana, and Cardano don’t use miners. They use validators. A validator locks up a minimum amount of the chain’s native token — **32 ETH** on Ethereum — and runs software that proposes new blocks and checks other validators’ work. If you do your job honestly, you earn staking rewards paid in newly issued tokens plus a share of network fees. If you try to cheat or your validator goes offline for too long, the network slashes part of your stake. **Slashing** means the protocol destroys a chunk of your locked tokens. It is not a fine you can pay later. It is an automatic, irreversible deletion. That is how proof-of-stake makes attacking the network expensive and self-destructive.\n\nThe second kind of staking has nothing to do with securing a chain. You see it all over DeFi: “stake your LP tokens,” “stake to earn CAKE,” “stake and earn.” This is **not consensus staking**. You are depositing tokens into a smart contract that pays you rewards, often in a governance token, as an incentive to keep your funds parked there. The protocol might use your deposit for liquidity or just as a gamified loyalty programme. There is no validator software to run, no slashing by a layer-1 protocol, and no network security role. The only risk you take is smart contract risk and token price movement. When someone says “the staking APY on this pool is 40%,” they are almost always talking about DeFi yield staking, not consensus staking.\n\nWhy does consensus staking exist in the first place? Before proof-of-stake, blockchains like Bitcoin used proof-of-work: spend real-world electricity, solve a puzzle, win the right to produce a block. That works, but it consumes enormous energy and concentrates power in whoever can buy the most mining hardware. Proof-of-stake replaces electricity bills with capital at risk. You don’t prove you spent resources. You prove you have skin in the game. That shift cuts energy use by over 99% and opens participation to anyone who holds the token, though the 32 ETH minimum on Ethereum is a real barrier. Pooled staking services and liquid staking protocols break that barrier down. We will get to those."
+            },
+            {
+              id: "m4.5-page-2",
+              title: "Liquid Staking and Restaking",
+              content: "Staking ETH on Ethereum used to be a one-way door. You deposited 32 ETH into the staking contract, your funds were locked until an upgrade enabled withdrawals, and you couldn’t use that ETH anywhere else. If you wanted to earn yield in DeFi on top of staking rewards, you were out of luck. **Liquid staking** changed that.\n\nA liquid staking protocol takes your ETH, stakes it on your behalf, and gives you a receipt token in return. On **Lido**, you deposit ETH and receive **stETH**. On **Rocket Pool**, you receive **rETH**. These tokens represent your staked position plus the rewards accruing over time. stETH is not pegged 1:1 to ETH by some algorithm. It grows in value relative to ETH as staking rewards accumulate, or it trades at a slight discount when markets panic. The key feature is that stETH is a standard ERC-20 token. You can deposit it into lending protocols like Aave as collateral, provide it as liquidity on a DEX, or swap it back for ETH on the open market. Your stake is now liquid. You earn the base Ethereum staking yield, and you can layer DeFi yield on top.\n\nLiquid staking solved the liquidity problem. But the yield from the base Ethereum staking rate — roughly 3-4% APY in 2026 — is modest. That is where **restaking** enters.\n\n**EigenLayer** introduced restaking in 2023 and it went fully live with slashing conditions in 2024. The idea: your staked ETH is already securing Ethereum. EigenLayer lets you opt in to secure additional services — bridges, data availability layers, oracles — using the same staked capital. These services are called **Actively Validated Services (AVSs)**. By restaking, you commit to running additional software and following the rules of those AVSs, on top of Ethereum’s own consensus rules. If you violate an AVS’s conditions, your stake can be slashed by that AVS’s smart contract, not just by Ethereum’s protocol. In return, you earn additional fees from the AVSs you secure. Restaking is like renting out your capital multiple times to multiple tenants at once. The yield goes up. So does the list of things that can get you slashed.\n\nLet me be direct: restaking is still maturing. EigenLayer operators have slashing risk from AVS code that is much younger and less battle-tested than Ethereum’s core protocol. The promise is higher yield. The price is layered risk. Anyone telling you restaking is free money is either lying or doesn’t understand it.\n\n**Liquid restaking tokens (LRTs)** add another layer. They tokenize your restaked position so you can trade it or deploy it elsewhere. That means you might hold a token that represents restaked ETH securing three different AVSs, and a slashing event in any one of those AVSs feeds backward into the token’s value. Composability is powerful. It also propagates risk faster than any spreadsheet can model."
+            },
+            {
+              id: "m4.5-page-3",
+              title: "Staking Risks",
+              content: "Every yield in crypto has a source, and every source has a counterparty, a codebase, or a set of rules that can fail. Staking is no exception.\n\n**Slashing** is the most distinct risk. If your validator double-signs a block or suffers extended downtime, the protocol destroys a portion of your stake. For a solo validator running their own hardware, a misconfiguration or a power outage during a critical window could trigger slashing. For liquid staking protocols, slashing events are socialized across all token holders. That means when a Lido validator gets slashed, the loss reduces the value of every stETH holder’s position proportionally. You may not even see an alert. The stETH/ETH ratio just drifts down a fraction of a percent. In 2025, a series of correlated validator outages on a minority client sparked a debate about whether staking pools should compensate holders out of their treasury. No settlement was reached. The risk sits with the token holder, not the protocol.\n\n**Lock-up periods and withdrawal queues** are a different kind of friction. On Ethereum, exiting a validator position involves a queue. During periods of high exit demand, that queue can stretch to days or weeks. If you need your ETH back immediately, you sell your liquid staking token on the secondary market. If panic has hit the market and stETH trades at a 2% discount, you eat that loss. The promise of liquidity doesn’t guarantee you get a fair price in a crisis.\n\n**Smart contract risk** lives in every liquid staking protocol. Lido, Rocket Pool, and EigenLayer are all collections of smart contracts. A bug in the withdrawal logic, the reward distribution mechanism, or the slashing handling code could drain funds or lock them permanently. These protocols are heavily audited and insured to varying degrees, but no audit guarantees zero bugs. In 2026, liquid staking protocols collectively hold over $30 billion in ETH. That is a big honeypot.\n\nThen there is the **yield mirage**. A dashboard that says “5.2% APY” is quoting the gross reward rate before any risk premium is priced in. The true net yield after accounting for slashing probability, smart contract risk, token discount risk, and gas costs to enter and exit is lower. By how much? Nobody knows exactly."
+            },
+            {
+              id: "m4.5-quiz",
+              title: "Module 4.5 Quiz",
+              type: "quiz",
+              questions: [
+                {
+                  id: "q1",
+                  question: "What is the minimum amount of ETH required to run a solo validator on Ethereum?",
+                  options: [
+                    "16 ETH",
+                    "32 ETH",
+                    "64 ETH",
+                    "8 ETH"
+                  ],
+                  correctAnswer: 1,
+                  hintPageId: "m4.5-page-1"
+                },
+                {
+                  id: "q2",
+                  question: "A liquid staking token like stETH allows you to:",
+                  options: [
+                    "Avoid all smart contract risk because the token is backed 1:1 by ETH in a bank",
+                    "Validate blocks without running any software",
+                    "Use your staked position in DeFi protocols while still earning staking rewards",
+                    "Stake ETH without any risk of slashing"
+                  ],
+                  correctAnswer: 2,
+                  hintPageId: "m4.5-page-2"
+                },
+                {
+                  id: "q3",
+                  question: "Restaking through EigenLayer means:",
+                  options: [
+                    "Converting your stETH back to ETH through a centralized exchange",
+                    "Using your already-staked ETH to secure additional services and earn extra fees",
+                    "Staking ETH on multiple different Layer 1 blockchains simultaneously",
+                    "Lending your ETH to a DAO in exchange for governance tokens"
+                  ],
+                  correctAnswer: 1,
+                  hintPageId: "m4.5-page-2"
+                },
+                {
+                  id: "q4",
+                  question: "What does slashing refer to in proof-of-stake?",
+                  options: [
+                    "The protocol selling a portion of your stake to pay network fees",
+                    "A temporary freeze on your staking rewards due to high network congestion",
+                    "The reduction of staking APY when too many validators join the network",
+                    "The automatic and irreversible destruction of part of your staked tokens as a penalty for misbehavior"
+                  ],
+                  correctAnswer: 3,
+                  hintPageId: "m4.5-page-1"
+                },
+                {
+                  id: "q5",
+                  question: "Why might stETH trade at a slight discount to ETH during a market panic?",
+                  options: [
+                    "Smart contracts automatically adjust the stETH supply downward in a panic",
+                    "Lido mints extra stETH to stabilise the price",
+                    "Holders want instant liquidity and are willing to sell below the fair value, plus the withdrawal queue on Ethereum delays native redemptions",
+                    "The Ethereum protocol punishes liquid staking tokens during high volatility"
+                  ],
+                  correctAnswer: 2,
+                  hintPageId: "m4.5-page-2"
+                },
+                {
+                  id: "q6",
+                  question: "Which of the following is a risk specific to restaking that does not apply to basic liquid staking?",
+                  options: [
+                    "Your staked ETH is exposed to slashing conditions from multiple external services, not just Ethereum’s protocol",
+                    "The staking APY can go down over time",
+                    "You need at least 32 ETH to participate",
+                    "The staking rewards are paid in a token that might lose value"
+                  ],
+                  correctAnswer: 0,
+                  hintPageId: "m4.5-page-2"
+                },
+                {
+                  id: "q7",
+                  question: "When a liquid staking protocol socializes a slashing loss, what happens?",
+                  options: [
+                    "The validator who caused the slashing event is the only one who loses funds",
+                    "The protocol’s insurance fund fully reimburses every holder",
+                    "All staking rewards are paused until the slashed amount is recovered",
+                    "The loss is distributed proportionally across all token holders, slightly reducing the value of each token"
+                  ],
+                  correctAnswer: 3,
+                  hintPageId: "m4.5-page-3"
+                },
+                {
+                  id: "q8",
+                  question: "A friend tells you, “I’m getting 12% APY on a restaking strategy, it’s basically free money.” The most accurate response is:",
+                  options: [
+                    "That yield looks high because it doesn’t yet include a premium for the layered slashing and smart contract risks you are taking on.",
+                    "“You are right, restaking is a zero-risk way to earn extra yield.”",
+                    "“The 12% APY is guaranteed by EigenLayer’s insurance fund and can never drop.”",
+                    "“Restaking yields are only available to institutional investors, so you are probably misreading the dashboard.”"
+                  ],
+                  correctAnswer: 0,
+                  hintPageId: "m4.5-page-3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: "module-4.6",
+          title: "Module 4.6 — DAOs: Theory and Practice",
+          pages: [
+            {
+              id: "m4.6-video",
+              title: "DAOs: Theory and Practice",
+              type: "video",
+              youtubeId: "KHm0uUPqmVE",
+              content: "Welcome to Module 4.6. In this module, we will explore what a Decentralized Autonomous Organization (DAO) is, how voting executions work on-chain, our treasury structures, quadratic funding, and case studies of real DAOs."
+            },
+            {
+              id: "m4.6-page-1",
+              title: "What a DAO Actually Is",
+              content: "A DAO is a **Decentralized Autonomous Organization**. That name is a promise and a problem. Let me break down what the words claim, what they actually deliver in 2026, and where the gap lives.\n\nA DAO is a group of people who coordinate through a shared set of smart contracts instead of through a legal entity with a CEO. The rules are written in code. Decisions get made by token holders voting on proposals. When a proposal passes, the smart contract executes the result automatically. Nobody can veto it, and nobody needs to manually send a bank transfer. The code does the work.\n\nThe **\"decentralized\"** part means no single person or company controls the organization. In theory, the token holders collectively steer it. In practice, token ownership is often concentrated. A small number of wallets hold enough voting power to pass or block proposals. When three addresses control 51% of a governance token supply, calling the organization decentralized is more of an aspiration than a description.\n\nThe **\"autonomous\"** part means the organization runs on code that can't be stopped. But autonomy is also partial. A DAO can vote to change its own rules, upgrade its smart contracts, or hire a development team. The code doesn't manage payroll or settle disputes. People still intervene. The autonomy is in the treasury and the proposal execution, not in every operational detail.\n\n### The Lifecycle of a DAO Proposal\n\nHere is how a typical DAO proposal works. Someone posts an idea in the governance forum. Discussion happens. If it gains traction, the proposer formalizes it into a proposal on a platform like Snapshot or directly on-chain. Token holders vote. If it meets quorum and passes, the proposal moves to execution. For on-chain proposals, a timelock contract enforces a delay (often 24 to 48 hours) before the code executes, giving people time to exit if they disagree with the outcome. After the timelock, the smart contract function is called and the change happens: funds move, a parameter updates, a new contract gets whitelisted.\n\n**Governance tokens** are what you use to vote. One token, one vote is common, but some DAOs use quadratic voting or delegation. You earn governance tokens by providing liquidity, participating in the community, or buying them on the open market. Holding the token doesn't give you equity in a company. It gives you voting rights in a protocol. The distinction matters because a governance token's value often depends on the protocol's fee generation, not on any legal claim to assets.\n\nWhy would anyone use a DAO? For a group of strangers on the internet who want to pool money and make decisions without incorporating in a specific jurisdiction, a DAO is the fastest way to start. For communities that distrust centralized gatekeepers, DAOs offer a transparent alternative. And for protocols that manage billions in user funds, DAOs let the users become the stewards."
+            },
+            {
+              id: "m4.6-page-2",
+              title: "How a DAO Vote Executes On-Chain",
+              content: "In Week 3 you learned that a smart contract is a set of functions triggered by transactions. A DAO takes that logic and attaches it to a voting process. A passed proposal doesn't end with a handshake or a press release. It ends with a function call.\n\nWhen a DAO wants to spend treasury funds, the funds sit in a smart contract that only responds to certain commands. The most important command is an approval from the governance contract. The proposal says: \"Send 100,000 USDC to this address for developer grants.\" Token holders vote. If the vote passes and the timelock expires, the governance contract calls the transfer function on the treasury contract. The treasury contract checks that the caller is the governance contract, verifies the parameters match the passed proposal, and then executes the transfer. No human intermediary touches the funds. The code enforces the decision.\n\n**Timelock contracts** are the safety valve. They introduce a mandatory waiting period between a vote passing and the execution of its outcome. If a malicious proposal somehow passes, token holders have a window to exit the protocol before the funds move. In a lending protocol, you might withdraw your deposit. In a DEX, you might pull your liquidity. The timelock doesn't stop the bad proposal. It gives you time to react.\n\nThe bridge between smart contracts and DAOs is what makes on-chain governance different from a company poll. A company's employee survey can say \"we want better snacks,\" and management might ignore it. A DAO proposal that passes with sufficient quorum triggers code that no manager can override. That is both the superpower and the threat. If the code is bug-free and the governance process is legitimate, the treasury is safer from human corruption than any corporate bank account. If the code has a flaw or the voting is captured by a single whale, the treasury can be drained just as automatically.\n\nThis is not hypothetical. In 2022, the Beanstalk Farms DAO suffered a governance attack. An attacker borrowed governance tokens through a flash loan, voted through a malicious proposal, and drained $182 million from the treasury, all within a single transaction. The code did exactly what it was told. The lesson: an on-chain vote is only as robust as the governance token distribution and the quorum rules that constrain it."
+            },
+            {
+              id: "m4.6-page-3",
+              title: "Treasury, Public Goods, and Real DAOs",
+              content: "A DAO's **treasury** is the pool of assets it controls. For a protocol like Uniswap, the treasury holds UNI tokens and a portion of trading fees. For a grant-giving DAO like Gitcoin, the treasury funds public goods in the Ethereum ecosystem. How that treasury is managed determines whether the DAO survives.\n\nMost DAOs hold the majority of their treasury in their own governance token. That's risky, because a sharp price drop shrinks the runway overnight. Mature DAOs diversify. MakerDAO holds a mix of stablecoins, ETH, and real-world assets. Uniswap DAO holds UNI and has debated fee switches that would route protocol revenue to token holders. Nouns DAO uses a daily auction of its NFTs to fund whimsical and creative projects, from sending a Nouns-themed coffee cup to space to funding on-chain art experiments. Each of these treasuries is managed entirely through proposals and votes.\n\n### Quadratic Funding\n\nGitcoin introduced **quadratic funding** as a way to allocate public goods money. Instead of one token one vote, quadratic funding weights votes by the number of unique contributors, not the size of the contribution. A project backed by 100 people each giving 1 gets more matching funds than a project backed by one person giving 100. The goal is to fund what the community actually values, not what a few rich donors prefer. Quadratic funding is not perfect — collusion and Sybil attacks are constant threats — but it is one of the more honest attempts to solve the problem of public goods in a permissionless system.\n\n### Real DAOs\n\n**MakerDAO** governs the Maker protocol and the DAI stablecoin. It has one of the most active governance processes in DeFi, with regular executive votes that adjust risk parameters. Its treasury is massive, diversified, and highly scrutinized. Voter participation varies but is generally concentrated among a few large delegates. MakerDAO has survived market crashes and regulatory pressure, which makes it one of the few DAOs that can claim genuine resilience.\n\n**Uniswap DAO** governs the largest DEX in crypto. Its treasury holds billions in UNI tokens. For years, the community debated whether to activate a fee switch that would direct a small portion of trading fees to token holders. In 2024, the DAO finally approved a proposal to turn on fees for select pools, a decision that will shape how DEX governance tokens are valued going forward. The debate exposed the tension between users who want low fees and token holders who want revenue.\n\n**Nouns DAO** is an experiment in daily governance. Every day, one Nouns NFT is auctioned, and the winner joins the DAO with voting rights. The treasury funds proposals that range from clever to chaotic. Nouns has produced some of the most creative on-chain projects and also some of the most wasteful spending. It's a living demonstration that a DAO can be fast, fun, and financially irresponsible all at once."
+            },
+            {
+              id: "m4.6-quiz",
+              title: "Module 4.6 Quiz",
+              type: "quiz",
+              questions: [
+                {
+                  id: "q1",
+                  question: "What is quorum in DAO governance?",
+                  options: [
+                    "The maximum number of proposals a DAO can have open simultaneously",
+                    "The share of the treasury that must be held in stablecoins before a vote can proceed",
+                    "The minimum level of token holder participation required for a vote to be considered valid",
+                    "The number of core team members who must approve a proposal before it goes to a community vote"
+                  ],
+                  correctAnswer: 2,
+                  hintPageId: "m4.6-page-1"
+                },
+                {
+                  id: "q2",
+                  question: "A DAO votes to pay a contractor 10,000 USDC. The proposal includes an executable payload. What happens when the vote passes and the timelock expires?",
+                  options: [
+                    "The governance contract automatically calls the treasury contract, which transfers the USDC without any human signing the transaction",
+                    "The DAO's multisig signers receive a notification and must manually approve the transfer within 48 hours",
+                    "The contractor submits an invoice to the grants committee, which processes payment in the next funding cycle",
+                    "The proposal is recorded on-chain as a resolution, but payment requires a separate vote with a higher quorum threshold"
+                  ],
+                  correctAnswer: 0,
+                  hintPageId: "m4.6-page-2"
+                },
+                {
+                  id: "q3",
+                  question: "Why did several DAO treasuries lose most of their value during the 2022 bear market?",
+                  options: [
+                    "Smart contract exploits drained treasury funds across multiple protocols simultaneously",
+                    "Regulatory actions in the US forced DAOs to convert treasury assets to fiat at a loss",
+                    "Governance token holders voted to distribute treasury funds as dividends before prices fell",
+                    "Treasuries were predominantly held in the protocol's own governance token, which lost most of its value when the broader market declined"
+                  ],
+                  correctAnswer: 3,
+                  hintPageId: "m4.6-page-3"
+                },
+                {
+                  id: "q4",
+                  question: "What makes quadratic funding different from a simple donation-matching program?",
+                  options: [
+                    "Quadratic funding only matches donations made in ETH, not stablecoins",
+                    "The matching formula amplifies projects with many small donors rather than a few large ones, reducing the influence of wealthy participants on funding outcomes",
+                    "Quadratic funding requires a DAO governance vote for every individual grant, unlike direct matching which is automated",
+                    "The matching pool in quadratic funding is drawn from protocol trading fees rather than direct donor contributions"
+                  ],
+                  correctAnswer: 1,
+                  hintPageId: "m4.6-page-3"
+                },
+                {
+                  id: "q5",
+                  question: "In the Uniswap governance dispute over deploying v3 to the BNB chain, what did the outcome reveal about voting power distribution?",
+                  options: [
+                    "Retail token holders coordinated successfully to override a decision by large investors",
+                    "The proposal failed because Uniswap's quorum threshold was not met, despite strong community interest",
+                    "A small number of venture capital firms held enough UNI to determine the outcome regardless of broader community sentiment",
+                    "Uniswap's governance contract malfunctioned during the vote and the proposal had to be resubmitted"
+                  ],
+                  correctAnswer: 2,
+                  hintPageId: "m4.6-page-3"
+                },
+                {
+                  id: "q6",
+                  question: "What is the primary purpose of a timelock contract in DAO governance?",
+                  options: [
+                    "To prevent token holders from selling governance tokens in the 72 hours before a vote closes",
+                    "To ensure that large treasury transfers are reviewed by a legal entity before execution",
+                    "To slow down voter participation so that only committed community members can influence outcomes",
+                    "To create a delay between a passed vote and its execution, giving the community a window to detect errors or malicious proposals"
+                  ],
+                  correctAnswer: 3,
+                  hintPageId: "m4.6-page-2"
+                },
+                {
+                  id: "q7",
+                  question: "What is a governance token?",
+                  options: [
+                    "A transferable token whose holders have voting rights in a protocol's decision-making process, where more tokens typically means more votes",
+                    "An NFT issued to DAO members that proves their identity for off-chain voting purposes",
+                    "A non-transferable credential assigned by the DAO's founding team to trusted contributors",
+                    "A stablecoin used specifically to pay for gas fees during on-chain governance transactions"
+                  ],
+                  correctAnswer: 0,
+                  hintPageId: "m4.6-page-1"
+                },
+                {
+                  id: "q8",
+                  question: "Nouns DAO added a \"rage quit\" mechanism after a 2023 internal dispute. What does this type of mechanism allow?",
+                  options: [
+                    "Token holders to veto any proposal within 24 hours by burning their tokens",
+                    "Dissenting members to exit the DAO and receive their proportional share of the treasury rather than remaining in a community they disagree with",
+                    "The founding team to dissolve the DAO and distribute remaining treasury funds if governance participation falls below a minimum threshold",
+                    "Any member to nullify a passed proposal if they can demonstrate the vote was influenced by a coordinated token purchase"
+                  ],
+                  correctAnswer: 1,
+                  hintPageId: "m4.6-page-3"
+                }
+              ]
+            }
+          ]
         }
       ]
     }
