@@ -3960,6 +3960,17 @@ A network that thousands of people depend on cannot allow any single actor to co
               ]
             }
           ]
+        },
+        {
+          id: "module-week-4-review",
+          title: "Week 4 Wrap Up",
+          pages: [
+            {
+              id: "week-4-wrap-up",
+              title: "Week 4 Wrap Up",
+              content: "DeFi is not a collection of separate products. It is a set of interlocking primitives that compose into a financial system, and Week 4 was about understanding each primitive well enough to see how they fit together.\n\nStablecoins solved the volatility problem that made crypto impractical for everyday financial activity. Without a stable unit of account, none of the rest of DeFi works at scale: you cannot lend, borrow, or price liquidity meaningfully in an asset that moves 20% in a week. AMMs solved the liquidity problem without requiring a counterparty on the other side of every trade, replacing the order book with a mathematical relationship between pooled assets. Lending protocols took the capital sitting in those pools and made it productive in two directions simultaneously: borrowers get liquidity without selling their assets, lenders earn yield on capital they would otherwise hold idle. Staking connects the financial layer to the security layer, turning the act of holding ETH into active participation in Ethereum's consensus mechanism, with liquid staking making that participation composable with everything else.\n\nDAOs sit on top of all of it as the governance layer: the mechanism by which communities make collective decisions about how protocols change, how treasuries get spent, and who has authority over what. The gap between DAO theory and DAO practice is real and worth taking seriously. Voter apathy, token concentration, and the tension between decentralization and operational efficiency are not problems that marketing copy resolves. They are the actual design challenges that the next generation of protocol builders will need to address.\n\nWhat you can do now that you couldn't do at the start of this week is read a DeFi protocol and understand what it is actually doing. You can look at a stablecoin and identify whether its peg is backed by collateral, by an algorithm, or by a reserve. You can read a Snapshot proposal and understand whether the vote is binding on-chain or a soft signal requiring human execution. You can look at a staking dashboard and distinguish gross APY from the net yield that remains after the real risk stack is priced in. That is not a small thing."
+            }
+          ]
         }
       ]
     }
