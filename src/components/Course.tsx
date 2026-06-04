@@ -288,8 +288,8 @@ export default function Course() {
     
     const page = allPages[pageIndex];
     
-    // 1. Strict Lock: Allow Part 1, 2, 3, and 4
-    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3' && page.partId !== 'part-4') {
+    // 1. Strict Lock: Allow Part 1, 2, 3, 4, and 5
+    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3' && page.partId !== 'part-4' && page.partId !== 'part-5') {
       return true;
     }
 
@@ -349,7 +349,7 @@ export default function Course() {
       const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
       if (!isTester) {
         const nextPage = allPages[nextIndex];
-        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3' && nextPage.partId !== 'part-4') {
+        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3' && nextPage.partId !== 'part-4' && nextPage.partId !== 'part-5') {
           // Stay on current page or show "Coming Soon" if we want, but for now we just don't navigate
           return;
         }
