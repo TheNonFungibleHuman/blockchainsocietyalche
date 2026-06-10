@@ -16,6 +16,7 @@ import EscrowSimulator from './demos/EscrowSimulator';
 import TokenSupplySimulator from './demos/TokenSupplySimulator';
 import NFTMetadataInspector from './demos/NFTMetadataInspector';
 import BridgeFlowSimulator from './demos/BridgeFlowSimulator';
+import CareerPathFinder from './demos/CareerPathFinder';
 
 export default function Course() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -288,8 +289,8 @@ export default function Course() {
     
     const page = allPages[pageIndex];
     
-    // 1. Strict Lock: Allow Part 1, 2, 3, 4, and 5
-    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3' && page.partId !== 'part-4' && page.partId !== 'part-5') {
+    // 1. Strict Lock: Allow Part 1, 2, 3, 4, 5, and 6
+    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3' && page.partId !== 'part-4' && page.partId !== 'part-5' && page.partId !== 'part-6') {
       return true;
     }
 
@@ -349,7 +350,7 @@ export default function Course() {
       const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
       if (!isTester) {
         const nextPage = allPages[nextIndex];
-        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3' && nextPage.partId !== 'part-4' && nextPage.partId !== 'part-5') {
+        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3' && nextPage.partId !== 'part-4' && nextPage.partId !== 'part-5' && nextPage.partId !== 'part-6') {
           // Stay on current page or show "Coming Soon" if we want, but for now we just don't navigate
           return;
         }
@@ -727,6 +728,8 @@ export default function Course() {
                       <NFTMetadataInspector />
                     ) : (currentPageData as any).componentId === 'bridge-flow-simulator' ? (
                       <BridgeFlowSimulator />
+                    ) : (currentPageData as any).componentId === 'CareerPathFinder' ? (
+                      <CareerPathFinder />
                     ) : (
                       <NetworkDemo />
                     )
