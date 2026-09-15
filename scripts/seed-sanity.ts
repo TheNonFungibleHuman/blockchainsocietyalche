@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createClient } from '@sanity/client';
 import { courseData } from '../src/data/courseData';
 
@@ -14,13 +15,18 @@ const dataset = process.env.SANITY_DATASET || 'production';
 const token = process.env.SANITY_WRITE_TOKEN;
 const isDryRun = process.argv.includes('--dry-run');
 
+// Every object inside a Sanity array requires a unique `_key`.
+const key = () => randomUUID();
+
 interface Span {
+  _key: string;
   _type: 'span';
   text: string;
   marks?: string[];
 }
 
 interface Block {
+  _key: string;
   _type: 'block';
   style?: string;
   listItem?: 'bullet' | 'number';
@@ -29,6 +35,7 @@ interface Block {
 }
 
 interface CodeBlock {
+  _key: string;
   _type: 'codeBlock';
   language?: string;
   code: string;
@@ -45,22 +52,22 @@ function parseInline(text: string): Span[] {
 
   while ((match = regex.exec(text))) {
     if (match.index > last) {
-      spans.push({ _type: 'span', text: text.slice(last, match.index) });
+      spans.push({ _key: key(), _type: 'span', text: text.slice(last, match.index) });
     }
     if (match[1] !== undefined) {
-      spans.push({ _type: 'span', text: match[2], marks: ['strong'] });
+      spans.push({ _key: key(), _type: 'span', text: match[2], marks: ['strong'] });
     } else if (match[3] !== undefined) {
-      spans.push({ _type: 'span', text: match[4], marks: ['code'] });
+      spans.push({ _key: key(), _type: 'span', text: match[4], marks: ['code'] });
     } else if (match[5] !== undefined) {
-      spans.push({ _type: 'span', text: match[6], marks: ['em'] });
+      spans.push({ _key: key(), _type: 'span', text: match[6], marks: ['em'] });
     } else if (match[7] !== undefined) {
-      spans.push({ _type: 'span', text: match[8], marks: ['em'] });
+      spans.push({ _key: key(), _type: 'span', text: match[8], marks: ['em'] });
     }
     last = regex.lastIndex;
   }
 
   if (last < text.length) {
-    spans.push({ _type: 'span', text: text.slice(last) });
+    spans.push({ _key: key(), _type: 'span', text: text.slice(last) });
   }
 
   return spans;
@@ -74,7 +81,7 @@ function markdownToBlocks(markdown: string): PortableText {
 
   const flushParagraph = () => {
     if (paragraph.length) {
-      blocks.push({ _type: 'block', style: 'normal', children: parseInline(paragraph.join(' ')) });
+      blocks.push({ _key: key(), _type: 'block', style: 'normal', children: parseInline(paragraph.join(' ')) });
       paragraph = [];
     }
   };
@@ -93,7 +100,7 @@ function markdownToBlocks(markdown: string): PortableText {
         codeLines.push(lines[i]);
         i += 1;
       }
-      blocks.push({ _type: 'codeBlock', language, code: codeLines.join('\n') });
+      blocks.push({ _key: key(), _type: 'codeBlock', language, code: codeLines.join('\n') });
       i += 1; // skip the closing fence
       continue;
     }
@@ -102,7 +109,7 @@ function markdownToBlocks(markdown: string): PortableText {
     if (headingMatch) {
       flushParagraph();
       const style = `h${headingMatch[1].length}`;
-      blocks.push({ _type: 'block', style, children: parseInline(headingMatch[2]) });
+      blocks.push({ _key: key(), _type: 'block', style, children: parseInline(headingMatch[2]) });
       i += 1;
       continue;
     }
@@ -110,7 +117,7 @@ function markdownToBlocks(markdown: string): PortableText {
     const bulletMatch = /^\s*[-*+]\s+(.*)$/.exec(line);
     if (bulletMatch) {
       flushParagraph();
-      blocks.push({ _type: 'block', style: 'normal', listItem: 'bullet', level: 1, children: parseInline(bulletMatch[1]) });
+      blocks.push({ _key: key(), _type: 'block', style: 'normal', listItem: 'bullet', level: 1, children: parseInline(bulletMatch[1]) });
       i += 1;
       continue;
     }
@@ -118,7 +125,7 @@ function markdownToBlocks(markdown: string): PortableText {
     const numberMatch = /^\s*\d+\.\s+(.*)$/.exec(line);
     if (numberMatch) {
       flushParagraph();
-      blocks.push({ _type: 'block', style: 'normal', listItem: 'number', level: 1, children: parseInline(numberMatch[1]) });
+      blocks.push({ _key: key(), _type: 'block', style: 'normal', listItem: 'number', level: 1, children: parseInline(numberMatch[1]) });
       i += 1;
       continue;
     }
@@ -140,6 +147,7 @@ function markdownToBlocks(markdown: string): PortableText {
 function mapPage(page: any): Record<string, unknown> {
   const pageType = page.type || 'content';
   const result: Record<string, unknown> = {
+    _key: key(),
     _type: 'page',
     pageId: page.id,
     title: page.title,
@@ -154,6 +162,7 @@ function mapPage(page: any): Record<string, unknown> {
     if (page.isWelcome !== undefined) result.isWelcome = page.isWelcome;
   } else if (pageType === 'quiz') {
     result.questions = (page.questions || []).map((q: any) => ({
+      _key: key(),
       _type: 'quizQuestion',
       id: q.id,
       question: q.question,
@@ -171,11 +180,13 @@ function mapPage(page: any): Record<string, unknown> {
 function buildCourseDocument() {
   const introduction = ((courseData as any).introduction || []).map(mapPage);
   const parts = (courseData.parts as any[]).map((part) => ({
+    _key: key(),
     _type: 'part',
     partId: part.id,
     title: part.title,
     description: part.description,
     modules: part.modules.map((module: any) => ({
+      _key: key(),
       _type: 'module',
       moduleId: module.id,
       title: module.title,
@@ -224,7 +235,7 @@ async function main() {
     if (samplePage) {
       const blocks = samplePage.content as any[];
       console.log(`  sample page: ${samplePage.pageId} (${blocks.length} blocks)`);
-      console.log(`  first block: ${JSON.stringify(blocks[0])}`);
+      console.log(`  first block: ${JSON.stringify(blocks[0]).slice(0, 120)}`);
     }
 
     // Spot-check a code block anywhere in the course.
