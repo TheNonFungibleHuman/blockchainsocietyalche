@@ -5,7 +5,7 @@ import { visionTool } from '@sanity/vision';
 import { schemaTypes } from './schemaTypes';
 
 const projectId = process.env.SANITY_STUDIO_PROJECT_ID || 'vaiyu1ge';
-const previewOrigin = process.env.SANITY_STUDIO_PREVIEW_URL || 'http://localhost:3000';
+const previewOrigin = process.env.SANITY_STUDIO_PREVIEW_URL || 'https://blockchainalche.com';
 
 export default defineConfig({
   name: 'default',

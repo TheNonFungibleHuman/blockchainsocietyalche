@@ -2,25 +2,16 @@
 
 This is the headless CMS (admin UI) for authoring course content.
 
-## Setup (one time)
+**Deployed:** https://blockchain-cms.vercel.app (Vercel project with Root Directory = `studio`).
 
-1. Create a Sanity project at https://www.sanity.io (free tier is fine).
-2. Note your **Project ID**.
-3. Create `.env` in this `studio/` directory:
+## Run locally
 
-   ```
-   SANITY_STUDIO_PROJECT_ID=your-project-id
-   ```
+```bash
+npm install
+npm run dev   # → http://localhost:3333
+```
 
-4. Install and run:
-
-   ```bash
-   cd studio
-   npm install
-   npm run dev
-   ```
-
-   The Studio opens at `http://localhost:3333` by default.
+The project ID is hardcoded in `sanity.config.ts` / `sanity.cli.ts` (`vaiyu1ge`); `SANITY_STUDIO_PROJECT_ID` overrides it if needed.
 
 ## Authoring model
 

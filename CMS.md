@@ -16,15 +16,17 @@ Learner app (this repo)                 Sanity Studio (hosted or local)
 - **Progress/XP/locks** stay in Supabase (unchanged).
 - Stable IDs (`courseId`, `partId`, `moduleId`, `pageId`) link the two and **must match** the Supabase catalog.
 
-## Hosted Studio (no local dev)
+## Hosted Studio
 
-Deploy the Studio to Sanity's hosting and access it at `https://vaiyu1ge.sanity.studio`:
+The Studio is deployed to Vercel at **https://blockchain-cms.vercel.app** — a separate
+Vercel project with Root Directory = `studio` (build `npm run build`, output `dist`).
+It redeploys automatically when you push to the repo.
 
+To run it locally instead:
 ```bash
 cd studio
 npm install
-npx sanity login        # one-time browser login
-npm run deploy          # prints the hosted Studio URL
+npm run dev   # → http://localhost:3333
 ```
 
 The project ID (`vaiyu1ge`) is already configured in `studio/sanity.config.ts` / `sanity.cli.ts`; `SANITY_STUDIO_PROJECT_ID` overrides it if needed.
@@ -57,7 +59,7 @@ VITE_SANITY_READ_TOKEN=your-viewer-token   # for live preview
 
 The Studio's **Presentation** tool iframes the learner app at `/learn/course/{slug}?preview=true`. When that param is present (and `VITE_SANITY_READ_TOKEN` is set), the reader uses `@sanity/preview-kit` (`LiveQueryProvider` + `useLiveQuery`) to stream draft content **live** — edits appear in the iframe as you type.
 
-- `previewUrl` is configurable via `SANITY_STUDIO_PREVIEW_URL` (default `http://localhost:3000`). Set it to your deployed learner-app URL when it's on Vercel.
+- `previewUrl` points at `https://blockchainalche.com` by default (override with `SANITY_STUDIO_PREVIEW_URL` for local dev).
 
 ## Keeping the Supabase catalog in sync
 
@@ -69,7 +71,7 @@ SANITY_PROJECT_ID=vaiyu1ge npm run sync:catalog -- --dry-run
 SANITY_PROJECT_ID=vaiyu1ge npm run sync:catalog   # writes supabase/migrations/*_sync_catalog_from_sanity.sql
 ```
 
-**Automatic** (webhook): deploy the repo to Vercel, set these secrets, and add a Sanity webhook to `POST https://<your-app>/api/sanity-webhook`:
+**Automatic** (webhook): the learner app is deployed at https://blockchainalche.com, so the webhook endpoint is `https://blockchainalche.com/api/sanity-webhook`. Set these secrets in the learner app's Vercel project:
 
 ```
 SANITY_WEBHOOK_SECRET=your-random-secret
@@ -78,12 +80,12 @@ SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-In Sanity, create the webhook (API → Webhooks) for the "publish" event, pointing at `/api/sanity-webhook?secret=your-random-secret` (or send `x-sanity-webhook-secret` as a header).
+In Sanity, create the webhook (API → Webhooks) for the "publish" event, pointing at `https://blockchainalche.com/api/sanity-webhook?secret=your-random-secret` (or send `x-sanity-webhook-secret` as a header).
 
 ## What's wired
 
-- ✅ Sanity Studio schema (`studio/schemaTypes/`).
-- ✅ Hosted Studio deploy (`sanity deploy`).
+- ✅ Studio schema (`studio/schemaTypes/`).
+- ✅ Studio deployed to Vercel (`blockchain-cms.vercel.app`).
 - ✅ Presentation tool + instant live preview (`@sanity/preview-kit`).
 - ✅ Frontend fetch layer (`src/lib/sanity.ts`, `src/lib/courseContent.ts`).
 - ✅ Portable-text renderer (`RichTextRenderer.tsx`) with inline images + demo code blocks.
