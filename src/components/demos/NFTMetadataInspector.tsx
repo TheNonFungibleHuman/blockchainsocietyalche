@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Search, Shield, Ticket, GraduationCap, Server, Database, Globe, Info, ExternalLink } from 'lucide-react';
+
+import { Search, Shield, Ticket, GraduationCap, Server, Database, Globe, ExternalLink } from 'lucide-react';
 
 interface NFTExample {
   id: string;
@@ -8,7 +8,7 @@ interface NFTExample {
   type: 'art' | 'ticket' | 'credential';
   storage: 'on-chain' | 'ipfs' | 'centralized';
   image: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 const EXAMPLES: NFTExample[] = [

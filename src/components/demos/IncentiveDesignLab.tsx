@@ -1,14 +1,10 @@
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   CurrencyCircleDollar, 
   TrendUp, 
   TrendDown, 
-  Warning, 
-  CheckCircle, 
   Info, 
-  Users, 
-  Lightning,
   ShieldCheck,
   Skull
 } from '@phosphor-icons/react';
@@ -28,7 +24,7 @@ export default function IncentiveDesignLab() {
     let health = 100;
     let healthStatus = "Stable & Decentralized";
     let healthColor = "text-emerald-500";
-    
+
     if (profit <= 0) {
       health = 10;
       healthStatus = "Network Collapse (Nodes quitting)";
@@ -45,6 +41,11 @@ export default function IncentiveDesignLab() {
       health = 95;
       healthStatus = "Robust Participation";
       healthColor = "text-emerald-500";
+    } else if (profit > 0) {
+      // Slim but positive margins are sustainable, just not robust.
+      health = 80;
+      healthStatus = "Thin Margins (Participation at risk)";
+      healthColor = "text-yellow-500";
     }
 
     // Cheating scenario logic

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cube, Clock, List, Hash, Fingerprint, Info } from '@phosphor-icons/react';
+import { sha256Hex, HASH_DEBOUNCE_MS } from '../lib/hash';
 
 export default function BlockDemo() {
   const [data, setData] = useState('Payment: Alice -> Bob ($20)');
@@ -13,18 +14,14 @@ export default function BlockDemo() {
   const computeHash = async () => {
     setIsLoading(true);
     const content = `1${timestamp}${data}${prevHash}${nonce}`;
-    const msgBuffer = new TextEncoder().encode(content);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    setHash(hashHex);
+    setHash(await sha256Hex(content));
     setIsLoading(false);
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       computeHash();
-    }, 100);
+    }, HASH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [data, nonce, timestamp, prevHash]);
 

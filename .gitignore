@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# One-off migration data (contains user PII) — never commit
+.migration-data/
+*-firebase-adminsdk-*.json
+*-service-account*.json

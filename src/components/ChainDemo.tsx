@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LinkBreak, Link as LinkIcon, Warning, CheckCircle, ArrowsClockwise, Info, ArrowClockwise } from '@phosphor-icons/react';
+import { sha256Hex } from '../lib/hash';
 
 interface Block {
   index: number;
@@ -37,29 +38,32 @@ const INITIAL_BLOCKS: Block[] = [
 export default function ChainDemo() {
   const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
   const [computedHashes, setComputedHashes] = useState<string[]>(INITIAL_BLOCKS.map(b => b.hash));
+  const updateRequestId = useRef(0);
 
   const computeHash = async (index: number, data: string, prevHash: string) => {
     const block = INITIAL_BLOCKS[index];
     const content = `${block.index}${block.timestamp}${data}${prevHash}`;
-    const msgBuffer = new TextEncoder().encode(content);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return sha256Hex(content);
   };
 
-  const updateChain = async (newBlocks: Block[]) => {
+  const updateChain = async (changedIndex: number, newBlocks: Block[]) => {
+    const requestId = ++updateRequestId.current;
     const newHashes = [...computedHashes];
-    for (let i = 0; i < newBlocks.length; i++) {
+
+    for (let i = changedIndex; i < newBlocks.length; i++) {
       const prevHash = i === 0 ? INITIAL_BLOCKS[0].prevHash : newHashes[i - 1];
       newHashes[i] = await computeHash(i, newBlocks[i].data, prevHash);
     }
+
+    if (requestId !== updateRequestId.current) return;
+
     setComputedHashes(newHashes);
     setBlocks(newBlocks);
   };
 
   const handleDataChange = (index: number, newData: string) => {
     const newBlocks = blocks.map((b, i) => i === index ? { ...b, data: newData } : b);
-    updateChain(newBlocks);
+    updateChain(index, newBlocks);
   };
 
   const repairChain = () => {

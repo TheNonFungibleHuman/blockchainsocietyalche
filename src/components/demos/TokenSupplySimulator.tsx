@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Info, RefreshCw, TrendingUp, TrendingDown, Coins } from 'lucide-react';
 
 export default function TokenSupplySimulator() {
@@ -13,7 +12,6 @@ export default function TokenSupplySimulator() {
   const data = useMemo(() => {
     const years = 10;
     const chartData = [];
-    let circulating = (airdropPercentage / 100) * totalSupply;
     let currentTotal = totalSupply;
 
     for (let year = 0; year <= years; year++) {
@@ -34,8 +32,7 @@ export default function TokenSupplySimulator() {
       chartData.push({
         year: `Year ${year}`,
         total: Math.round(currentTotal),
-        circulating: Math.round(Math.min(currentCirculating, currentTotal)),
-        scarcity: Math.round((currentTotal - Math.min(currentCirculating, currentTotal)) / currentTotal * 100)
+        circulating: Math.round(Math.min(currentCirculating, currentTotal))
       });
     }
     return chartData;

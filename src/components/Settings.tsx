@@ -4,8 +4,7 @@ import { Settings as SettingsIcon, User, Mail, Shield, Check, Loader2, Globe } f
 import Navbar from './Navbar';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { updateProfile } from '../lib/lmsApi';
 import { COUNTRIES } from '../constants/countries';
 
 export default function Settings() {
@@ -40,19 +39,7 @@ export default function Settings() {
     setSaveSuccess(false);
     
     try {
-      const userRef = doc(db, 'users', user.uid);
-      const publicRef = doc(db, 'public_profiles', user.uid);
-      
-      // Use setDoc with merge: true for better durability
-      await setDoc(userRef, { 
-        displayName: displayName.trim(),
-        country: country
-      }, { merge: true });
-      
-      await setDoc(publicRef, { 
-        displayName: displayName.trim(),
-        country: country
-      }, { merge: true });
+      await updateProfile(displayName.trim(), country);
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

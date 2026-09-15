@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Code, 
@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Sparkles,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  type LucideIcon
 } from 'lucide-react';
 
 interface Question {
@@ -26,7 +27,7 @@ interface Question {
   options: {
     label: string;
     score: Record<string, number>;
-    icon: any;
+    icon: LucideIcon;
   }[];
 }
 
@@ -193,7 +194,7 @@ export default function CareerPathFinder() {
       actions: string[];
       color: string;
       gradient: string;
-      icon: any;
+      icon: LucideIcon;
     }> = {
       tech: {
         title: "Technical Builder & Security Cluster",
@@ -276,7 +277,7 @@ export default function CareerPathFinder() {
     return clusters[winner] || clusters.tech;
   };
 
-  const activeWinner = getWinner();
+  const activeWinner = useMemo(() => getWinner(), [scores]);
 
   return (
     <div id="career-path-finder" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 max-w-4xl mx-auto shadow-2xl relative overflow-hidden my-6">
@@ -325,7 +326,7 @@ export default function CareerPathFinder() {
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs text-zinc-500">
                 <span className="font-mono text-zinc-400">Question {currentQuestion + 1} of {questions.length}</span>
-                <span className="font-medium text-blue-400">{Math.round(((currentQuestion) / questions.length) * 100)}% complete</span>
+                <span className="font-medium text-blue-400">{Math.round(((currentQuestion + 1) / questions.length) * 100)}% complete</span>
               </div>
               <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                 <div 

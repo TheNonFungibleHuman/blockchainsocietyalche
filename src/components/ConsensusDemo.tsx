@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Desktop, CheckCircle, Warning, Broadcast, Info, ShieldCheck } from '@phosphor-icons/react';
 
@@ -156,7 +156,12 @@ export default function ConsensusDemo() {
             animate={{ scale: 1 }}
             transition={{ delay: idx * 0.05 }}
           >
-            <div className="relative -translate-x-1/2 -translate-y-1/2 group">
+            <div
+              tabIndex={0}
+              role="img"
+              aria-label={`${node.type === 'full' ? 'Full node' : 'Light node'}: ${getNodeTooltip(node)}`}
+              className="relative -translate-x-1/2 -translate-y-1/2 group outline-none rounded-2xl focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
               <div className={`p-3 rounded-2xl border-2 transition-all duration-500 shadow-sm cursor-help ${
                 node.status === 'accepted' ? 'bg-green-500/10 border-green-500 text-green-600 scale-110 shadow-green-500/20' :
                 node.status === 'rejected' ? 'bg-red-500/10 border-red-500 text-red-600 scale-110 shadow-red-500/20' :
@@ -166,7 +171,7 @@ export default function ConsensusDemo() {
               </div>
               
               {/* Enhanced Tooltip */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 translate-y-2 group-hover:translate-y-0">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-200 pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 group-focus-within:translate-y-0">
                 <div className="bg-zinc-900 dark:bg-zinc-800 text-white text-[10px] py-2 px-3 rounded-xl shadow-2xl border border-zinc-800 dark:border-zinc-700 min-w-[140px] text-center leading-tight">
                   <div className="font-bold mb-1 text-zinc-400 uppercase tracking-widest text-[8px]">
                     {node.type === 'full' ? 'Full Node' : 'Light Node'}
@@ -216,7 +221,7 @@ export default function ConsensusDemo() {
         <Info size={20} className="text-zinc-500 shrink-0 mt-0.5" />
         <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
           <p>
-            <strong>Consensus in Action:</strong> Hover over nodes during or after a broadcast to see their internal reasoning. In an <strong>Honest Broadcast</strong>, nodes reach agreement because the data matches their rules. In a <strong>Fraudulent Broadcast</strong>, nodes detect the discrepancy and automatically reject the block, protecting the network's integrity.
+            <strong>Consensus in Action:</strong> Hover over or Tab to each node during or after a broadcast to see its internal reasoning. In an <strong>Honest Broadcast</strong>, nodes reach agreement because the data matches their rules. In a <strong>Fraudulent Broadcast</strong>, nodes detect the discrepancy and automatically reject the block, protecting the network's integrity.
           </p>
         </div>
       </div>

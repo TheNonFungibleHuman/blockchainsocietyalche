@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Fingerprint, ArrowsClockwise, Info } from '@phosphor-icons/react';
+import { sha256Hex, HASH_DEBOUNCE_MS } from '../lib/hash';
 
 export default function HashDemo() {
   const [input, setInput] = useState('Hello World');
@@ -9,19 +10,14 @@ export default function HashDemo() {
 
   const computeHash = async (text: string) => {
     setIsLoading(true);
-    // Use the Web Crypto API for real SHA-256 hashing
-    const msgBuffer = new TextEncoder().encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    setHash(hashHex);
+    setHash(await sha256Hex(text));
     setIsLoading(false);
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       computeHash(input);
-    }, 100);
+    }, HASH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [input]);
 

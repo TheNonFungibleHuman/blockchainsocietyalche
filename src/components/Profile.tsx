@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Medal, Star, User, Shield } from 'lucide-react';
 import Navbar from './Navbar';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getLeaderboard } from '../lib/lmsApi';
 import { Navigate } from 'react-router-dom';
 
 export default function Profile() {
@@ -21,28 +20,9 @@ export default function Profile() {
       // PLUS tie-breaking with xpUpdatedAt for those with same XP
       const fetchRank = async () => {
         try {
-          // Count users with more XP
-          const qMore = query(collection(db, 'public_profiles'), where('xp', '>', profile.xp));
-          const snapshotMore = await getCountFromServer(qMore);
-          let count = snapshotMore.data().count;
-
-          // Count users with SAME XP but OLDER (smaller) timestamp
-          // Note: Legacy users with no xpUpdatedAt default to 0 and take priority
-          // This secondary logic might require a composite index, so we wrap in try-catch
-          try {
-            const myTime = (profile as any).xpUpdatedAt || 0;
-            const qSame = query(
-              collection(db, 'public_profiles'), 
-              where('xp', '==', profile.xp), 
-              where('xpUpdatedAt', '<', myTime)
-            );
-            const snapshotSame = await getCountFromServer(qSame);
-            count += snapshotSame.data().count;
-          } catch (e) {
-            console.log("Secondary rank count skipped (likely missing index)");
-          }
-
-          setGlobalRank(count + 1);
+          const leaderboard = await getLeaderboard(user?.id, 500);
+          const currentUser = leaderboard.find(entry => entry.id === user?.id);
+          setGlobalRank(currentUser?.rank || null);
         } catch (error) {
           console.error("Failed to fetch rank", error);
         }
@@ -143,7 +123,7 @@ export default function Profile() {
                 <p className="text-[10px] font-bold text-zinc-600 mb-2 uppercase tracking-[0.2em]">Validated Experience</p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-5xl font-serif text-white">
-                    {user?.email?.toLowerCase() === 'haryormeekun99@gmail.com' ? 0 : (profile?.xp || 0)}
+                    {profile?.isTester ? 0 : (profile?.xp || 0)}
                   </p>
                   <span className="text-sm font-bold text-zinc-600 uppercase tracking-widest font-sans">XP</span>
                 </div>

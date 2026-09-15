@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Shield, Zap, Info, Loader2, CheckCircle2, Coins, Server, ArrowDown } from 'lucide-react';
 
@@ -11,6 +11,14 @@ export default function BridgeFlowSimulator() {
   const [bridgeBalance, setBridgeBalance] = useState(1000);
   const [isBridging, setIsBridging] = useState(false);
   const [direction, setDirection] = useState<'l1-to-l2' | 'l2-to-l1'>('l1-to-l2');
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const reset = () => {
     setStage('initiate');
@@ -19,11 +27,14 @@ export default function BridgeFlowSimulator() {
 
   const handleBridge = async () => {
     setIsBridging(true);
-    
+
+    const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
     // Stage 1: Initiate (Wait 1s)
-    await new Promise(r => setTimeout(r, 1000));
+    await sleep(1000);
+    if (!isMountedRef.current) return;
     setStage('lock');
-    
+
     // Update balances for Lock
     if (direction === 'l1-to-l2') {
       setEthOnL1(prev => prev - 1);
@@ -31,11 +42,12 @@ export default function BridgeFlowSimulator() {
     } else {
       setWethOnL2(prev => prev - 1);
     }
-    
+
     // Stage 2: Lock/Burn (Wait 1.5s)
-    await new Promise(r => setTimeout(r, 1500));
+    await sleep(1500);
+    if (!isMountedRef.current) return;
     setStage('mint');
-    
+
     // Stage 3: Mint/Unlock (Wait 1.5s)
     if (direction === 'l1-to-l2') {
       setWethOnL2(prev => prev + 1);
@@ -43,8 +55,9 @@ export default function BridgeFlowSimulator() {
       setEthOnL1(prev => prev + 1);
       setBridgeBalance(prev => prev - 1);
     }
-    
-    await new Promise(r => setTimeout(r, 1500));
+
+    await sleep(1500);
+    if (!isMountedRef.current) return;
     setStage('complete');
     setIsBridging(false);
   };

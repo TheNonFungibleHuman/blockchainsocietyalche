@@ -1,25 +1,25 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Circle, BookOpen, PlayCircle, LockKey, CaretRight, CaretLeft, CaretDown, BookBookmark, Trophy, FileText, X as XIcon, ArrowRight, Shield, List } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { courseData } from '../data/courseData';
 import Navbar from './Navbar';
+import Quiz from './course/Quiz';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType } from '../firebase';
-import CexDexDemo from './demos/CexDexDemo';
-import TransactionLifecycleDemo from './demos/TransactionLifecycleDemo';
-import ConsensusSimulator from './demos/ConsensusSimulator';
-import IncentiveDesignLab from './demos/IncentiveDesignLab';
-import EscrowSimulator from './demos/EscrowSimulator';
-import TokenSupplySimulator from './demos/TokenSupplySimulator';
-import NFTMetadataInspector from './demos/NFTMetadataInspector';
-import BridgeFlowSimulator from './demos/BridgeFlowSimulator';
-import CareerPathFinder from './demos/CareerPathFinder';
+import { completePage, finishQuiz, getLeaderboard, markWelcomeWatched, saveQuizState } from '../lib/lmsApi';
+const CexDexDemo = lazy(() => import('./demos/CexDexDemo'));
+const TransactionLifecycleDemo = lazy(() => import('./demos/TransactionLifecycleDemo'));
+const ConsensusSimulator = lazy(() => import('./demos/ConsensusSimulator'));
+const IncentiveDesignLab = lazy(() => import('./demos/IncentiveDesignLab'));
+const EscrowSimulator = lazy(() => import('./demos/EscrowSimulator'));
+const TokenSupplySimulator = lazy(() => import('./demos/TokenSupplySimulator'));
+const NFTMetadataInspector = lazy(() => import('./demos/NFTMetadataInspector'));
+const BridgeFlowSimulator = lazy(() => import('./demos/BridgeFlowSimulator'));
+const CareerPathFinder = lazy(() => import('./demos/CareerPathFinder'));
 
 export default function Course() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
 
   // Navigation State
   const [activePart, setActivePart] = useState<string | null>((courseData as any).introduction?.[0] ? null : courseData.parts[0].id);
@@ -30,14 +30,13 @@ export default function Course() {
   const hasResumed = useRef(false);
   
   // UI State
-  const [isDark, setIsDark] = useState(true);
   const [expandedParts, setExpandedParts] = useState<string[]>([courseData.parts[0].id]);
   const [rightPaneTab, setRightPaneTab] = useState<'glossary' | 'resources' | 'leaderboard' | null>(null);
 
   // Leaderboard Data
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
-  // Progress & Gamification State (Local state synced with Firebase)
+  // Progress & Gamification State (local state synced with Supabase)
   const [completedPages, setCompletedPages] = useState<string[]>([]);
   const [userXP, setUserXP] = useState(0); 
   const [quizStates, setQuizStates] = useState<Record<string, { currentQ: number, attempts: Record<string, number>, finished: boolean }>>({});
@@ -67,6 +66,7 @@ export default function Course() {
   }, [currentModuleData, activeModule, activePage]);
 
   const currentIndex = allPages.findIndex(p => p.moduleId === activeModule && p.pageId === activePage);
+  const publishedPartIds = useMemo(() => new Set(courseData.parts.map(part => part.id)), []);
 
   // Scroll to top and handle video loading on page change
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function Course() {
     }
   }, [activePage, activeModule, currentPageData?.type]);
 
-  // Sync local state with Firebase profile on load
+  // Sync local state with Supabase profile on load
   useEffect(() => {
     if (profile) {
       // Use local state if it matches or if we just synced
@@ -89,15 +89,7 @@ export default function Course() {
         setCompletedPages(profilePages);
       }
       
-      // Hardcode XP to 0 for tester account
-      if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
-        if (userXP !== 0) setUserXP(0);
-        if (profile.xp !== 0) {
-          updateFirebaseProfile({ xp: 0 });
-        }
-      } else {
-        if (userXP !== profile.xp) setUserXP(profile.xp || 0);
-      }
+      if (userXP !== profile.xp) setUserXP(profile.xp || 0);
 
       try {
         if (profile.quizStates) {
@@ -148,123 +140,51 @@ export default function Course() {
     }
   }, [profile, allPages, activePage, expandedParts]); // Keep activePage to know if we are at start
 
-  // Helper to update Firebase
-  const updateFirebaseProfile = async (updates: any) => {
-    if (!user) return;
-
-    // Prevent XP updates for the tester account, always force to 0
-    const isTester = user.email?.toLowerCase() === 'haryormeekun99@gmail.com';
-    if (isTester) {
-      updates.xp = 0;
-    }
-
+  const refreshTrustedProfile = async () => {
     try {
-      const userRef = doc(db, 'users', user.uid);
-      const profileUpdates = { ...updates, xpUpdatedAt: updates.xp !== undefined ? Date.now() : undefined };
-      
-      // Filter out undefined values
-      Object.keys(profileUpdates).forEach(key => profileUpdates[key] === undefined && delete profileUpdates[key]);
-      
-      // Use setDoc with merge: true instead of updateDoc for better resilience.
-      // This will (re)create the document if it's missing.
-      await setDoc(userRef, profileUpdates, { merge: true });
-      
-      // If XP changed (or if it's the tester), update public profile
-      if (updates.xp !== undefined) {
-        const publicRef = doc(db, 'public_profiles', user.uid);
-        await setDoc(publicRef, { 
-          xp: updates.xp,
-          xpUpdatedAt: Date.now(),
-          displayName: profile?.displayName || user.displayName || 'Blocknaut',
-          photoURL: profile?.photoURL || user.photoURL || '',
-          country: profile?.country || 'Global'
-        }, { merge: true });
-      }
+      await refreshProfile();
     } catch (error) {
-      console.error("Error updating profile", error);
-      try {
-        handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
-      } catch (e) {
-        // Log the final JSON error so it appears in the logs
-        console.error("Critical Persistence Failure:", e);
-      }
+      console.error('Failed to refresh profile', error);
     }
   };
 
-  const handleSetUserXP = (updater: number | ((prev: number) => number)) => {
-    if (user?.email?.toLowerCase() === 'haryormeekun99@gmail.com') {
-      setUserXP(0);
-      // Also force update public profile to 0 if it's currently something else
-      updateFirebaseProfile({ xp: 0 });
-      return;
-    }
-    setUserXP(prev => {
-      const newXP = typeof updater === 'function' ? updater(prev) : updater;
-      updateFirebaseProfile({ xp: newXP });
-      return newXP;
-    });
-  };
 
   const handleUpdateQuizState = (moduleId: string, newState: any) => {
     setQuizStates(prev => {
+      const nextModuleState = { ...(prev[moduleId] || { currentQ: 0, attempts: {}, finished: false }), ...newState };
       const updated = {
         ...prev,
-        [moduleId]: { ...(prev[moduleId] || { currentQ: 0, attempts: {}, finished: false }), ...newState }
+        [moduleId]: nextModuleState
       };
-      updateFirebaseProfile({ quizStates: JSON.stringify(updated) });
+
+      saveQuizState(moduleId, nextModuleState).catch(error => {
+        console.error('Failed to save quiz state', error);
+      });
+
       return updated;
     });
   };
-  
-  // Sync dark mode
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
 
+  const handleFinishQuiz = async (moduleId: string) => {
+    try {
+      const result = await finishQuiz(moduleId);
+      if (result?.total_xp !== undefined) {
+        setUserXP(result.total_xp);
+      }
+      await refreshTrustedProfile();
+    } catch (error) {
+      console.error('Failed to finish quiz', error);
+    }
+  };
+  
   // Fetch Leaderboard Data
   useEffect(() => {
     if (rightPaneTab === 'leaderboard') {
-      import('firebase/firestore').then(({ collection, query, orderBy, limit, getDocs }) => {
-        const q = query(collection(db, 'public_profiles'), orderBy('xp', 'desc'), limit(10));
-        getDocs(q).then(snapshot => {
-          const TESTER_UID = 'yCaaPHKI26Yk4OroKR9hbvzB9Qe2';
-          const filteredDocs = snapshot.docs.filter(doc => doc.id !== TESTER_UID);
-          
-          const users = filteredDocs.map((doc) => {
-            const data = doc.data();
-            const fullName = data.displayName || 'Blocknaut';
-            const firstName = fullName.split(' ')[0];
-            
-            const xp = data.xp || 0;
-            const xpUpdatedAt = data.xpUpdatedAt || 0;
-
-            return {
-              name: firstName,
-              xp: xp,
-              xpUpdatedAt: xpUpdatedAt,
-              photoURL: data.photoURL,
-              country: data.country || 'Global'
-            };
-          });
-
-          // Tie-breaker sort: Same XP? Older update wins (lower timestamp)
-          users.sort((a, b) => {
-            if (b.xp !== a.xp) return b.xp - a.xp;
-            return (a.xpUpdatedAt || 0) - (b.xpUpdatedAt || 0);
-          });
-
-          // Assign ranks after sorting
-          const rankedUsers = users.map((u, i) => ({ ...u, rank: i + 1 }));
-
-          setLeaderboard(rankedUsers);
-        }).catch(err => console.error("Error fetching leaderboard", err));
-      });
+      getLeaderboard(user?.id, 10)
+        .then(setLeaderboard)
+        .catch(error => console.error('Error fetching leaderboard', error));
     }
-  }, [rightPaneTab]);
+  }, [rightPaneTab, user?.id]);
 
   if (authLoading) {
     return null;
@@ -273,29 +193,27 @@ export default function Course() {
   const handleFinishWelcome = async () => {
     if (!user) return;
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, { welcomeWatched: true }, { merge: true });
+      await markWelcomeWatched();
+      await refreshTrustedProfile();
     } catch (error) {
-      console.error("Error setting welcomeWatched", error);
+      console.error('Error setting welcomeWatched', error);
     }
   };
 
   const isPageLocked = (pageIndex: number) => {
     if (pageIndex <= 0) return false;
     
-    // Global bypass for testing account
-    const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
-    if (isTester) return false;
+    if (profile?.isTester) return false;
     
     const page = allPages[pageIndex];
     
-    // 1. Strict Lock: Allow Part 1, 2, 3, 4, 5, and 6
-    if (page.partId && page.partId !== 'part-1' && page.partId !== 'part-2' && page.partId !== 'part-3' && page.partId !== 'part-4' && page.partId !== 'part-5' && page.partId !== 'part-6') {
+    // Only allow navigation into published course parts.
+    if (page.partId && !publishedPartIds.has(page.partId)) {
       return true;
     }
 
     // 2. Welcome Video Lock Check
-    // We check both the Firebase profile and the immediate local completedPages state
+    // We check both the Supabase profile and the immediate local completedPages state
     // index 0 is always the welcome video intro
     const welcomePage = allPages[0];
     const welcomeGlobalId = welcomePage.moduleId ? `${welcomePage.moduleId}-${welcomePage.pageId}` : welcomePage.pageId;
@@ -326,7 +244,7 @@ export default function Course() {
     );
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const globalPageId = activeModule ? `${activeModule}-${activePage}` : activePage;
     
     // Unlock course if this was the welcome video
@@ -340,18 +258,23 @@ export default function Course() {
     if (!isAlreadyCompleted) {
       const newCompleted = [...completedPages, globalPageId];
       setCompletedPages(newCompleted);
-      updateFirebaseProfile({ completedPages: newCompleted });
+      try {
+        const result = await completePage(activeModule, activePage);
+        if (result?.total_xp !== undefined) {
+          setUserXP(result.total_xp);
+        }
+        refreshTrustedProfile();
+      } catch (error) {
+        console.error('Failed to persist page completion', error);
+      }
     }
 
     if (currentIndex < allPages.length - 1) {
       const nextIndex = currentIndex + 1;
       
-      // Strict Lock: Prevent non-testers from navigating into restricted parts
-      const isTester = user?.email?.toLowerCase() === 'haryormeekun99@gmail.com';
-      if (!isTester) {
+      if (!profile?.isTester) {
         const nextPage = allPages[nextIndex];
-        if (nextPage.partId && nextPage.partId !== 'part-1' && nextPage.partId !== 'part-2' && nextPage.partId !== 'part-3' && nextPage.partId !== 'part-4' && nextPage.partId !== 'part-5' && nextPage.partId !== 'part-6') {
-          // Stay on current page or show "Coming Soon" if we want, but for now we just don't navigate
+        if (nextPage.partId && !publishedPartIds.has(nextPage.partId)) {
           return;
         }
       }
@@ -679,6 +602,7 @@ export default function Course() {
 
                 <div className="flex-1">
                   {currentPageData?.type === 'interactive' ? (
+                    <Suspense fallback={<DemoFallback />}>
                     (currentPageData as any).componentId === 'SolscanIframe' ? (
                       <div className="w-full h-[600px] border border-white/5 rounded-xl overflow-hidden flex flex-col bg-zinc-950">
                         <div className="p-4 bg-[#080808] border-b border-white/5 flex items-center justify-between">
@@ -733,14 +657,14 @@ export default function Course() {
                     ) : (
                       <NetworkDemo />
                     )
+                    </Suspense>
                   ) : currentPageData?.type === 'quiz' && currentModuleData ? (
                     <Quiz 
-                      moduleId={currentModuleData.id}
                       questions={currentPageData.questions || []} 
                       userXP={userXP} 
-                      setUserXP={handleSetUserXP} 
                       onReviewRedirect={handleReviewRedirect}
                       onComplete={handleNext}
+                      onFinishQuiz={() => handleFinishQuiz(currentModuleData.id)}
                       quizState={quizStates[currentModuleData.id] || { currentQ: 0, attempts: {}, finished: false }}
                       updateQuizState={(newState) => handleUpdateQuizState(currentModuleData.id, newState)}
                     />
@@ -795,6 +719,7 @@ export default function Course() {
                     </div>
                   ) : (
                     <div className="prose prose-zinc prose-invert prose-lg max-w-none">
+                      <Suspense fallback={<DemoFallback />}>
                       <ReactMarkdown
                         components={{
                           p: ({ children }) => (
@@ -866,6 +791,7 @@ export default function Course() {
                       >
                         {currentPageData?.content || ''}
                       </ReactMarkdown>
+                      </Suspense>
                     </div>
                   )}
                 </div>
@@ -966,188 +892,16 @@ export default function Course() {
   );
 }
 
-import NetworkDemo from './NetworkDemo';
-import HashDemo from './HashDemo';
-import BlockDemo from './BlockDemo';
-import ChainDemo from './ChainDemo';
-import ConsensusDemo from './ConsensusDemo';
+const NetworkDemo = lazy(() => import('./NetworkDemo'));
+const HashDemo = lazy(() => import('./HashDemo'));
+const BlockDemo = lazy(() => import('./BlockDemo'));
+const ChainDemo = lazy(() => import('./ChainDemo'));
+const ConsensusDemo = lazy(() => import('./ConsensusDemo'));
 
-// ==========================================
-// STEP 4: QUIZ & XP ENGINE
-// ==========================================
-function Quiz({ 
-  moduleId,
-  questions, 
-  userXP, 
-  setUserXP, 
-  onReviewRedirect, 
-  onComplete,
-  quizState,
-  updateQuizState
-}: { 
-  moduleId: string,
-  questions: any[], 
-  userXP: number, 
-  setUserXP: any, 
-  onReviewRedirect: (id: string) => void, 
-  onComplete: () => void,
-  quizState: { currentQ: number, attempts: Record<string, number>, finished: boolean },
-  updateQuizState: (state: any) => void
-}) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
-
-  const { currentQ, attempts, finished } = quizState;
-
-  if (finished) {
-    return (
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full border border-white/5 rounded-3xl p-12 bg-zinc-900/50 text-center">
-        <div className="w-24 h-24 bg-emerald-950/40 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-500/20">
-          <Trophy size={48} weight="duotone" />
-        </div>
-        <h3 className="text-4xl font-serif mb-4 text-white">Module Complete!</h3>
-        <p className="text-zinc-300 mb-10 text-lg">You've successfully passed the quiz and earned XP.</p>
-        <button onClick={onComplete} className="px-8 py-4 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black font-medium transition-all shadow-lg shadow-blue-500/25 hover:scale-105 cursor-pointer hover:bg-gradient-to-r hover:from-blue-600 hover:to-red-600 hover:text-white">
-          Continue to Next Module
-        </button>
-      </motion.div>
-    );
-  }
-
-  const question = questions[currentQ];
-
-  const handleSubmit = () => {
-    const qAttempts = attempts[question.id] || 0;
-    const isFirstAttempt = qAttempts === 0;
-
-    if (selected === question.correctAnswer) {
-      setStatus('correct');
-      if (isFirstAttempt) {
-        setUserXP((prev: number) => prev + 10);
-      }
-      updateQuizState({ attempts: { ...attempts, [question.id]: qAttempts + 1 } });
-    } else {
-      setStatus('incorrect');
-      if (isFirstAttempt && userXP >= 20) {
-        setUserXP((prev: number) => prev - 10);
-      }
-      updateQuizState({ attempts: { ...attempts, [question.id]: qAttempts + 1 } });
-    }
-  };
-
-  const handleNextQ = () => {
-    if (currentQ < questions.length - 1) {
-      updateQuizState({ currentQ: currentQ + 1 });
-      setSelected(null);
-      setStatus('idle');
-    } else {
-      updateQuizState({ finished: true });
-    }
-  };
-
+function DemoFallback() {
   return (
-    <div className="w-full border border-white/10 rounded-3xl p-8 md:p-10 bg-[#0a0a0a]/60 backdrop-blur-xl shadow-2xl">
-      <div className="flex justify-between items-center mb-10">
-        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Objective {currentQ + 1} of {questions.length}</span>
-        <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full">
-          <Trophy size={16} className="text-blue-500" />
-          <span className="text-sm font-mono font-bold text-blue-500">
-            {userXP} XP
-          </span>
-        </div>
-      </div>
-
-      <h3 className="font-serif text-2xl md:text-3xl font-medium mb-10 leading-snug text-white">{question.question}</h3>
-
-      <div className="space-y-4 mb-10">
-        {question.options.map((opt: string, idx: number) => (
-          <button
-            key={idx}
-            onClick={() => status === 'idle' && setSelected(idx)}
-            disabled={status !== 'idle'}
-            className={`w-full text-left p-6 rounded-2xl border transition-all cursor-pointer group relative overflow-hidden ${
-              selected === idx 
-                ? status === 'idle' 
-                  ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.15)]' 
-                  : status === 'correct'
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-red-500 bg-red-500/10'
-                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
-            }`}
-          >
-            {selected === idx && status === 'idle' && (
-              <motion.div layoutId="quiz-select" className="absolute inset-0 bg-blue-500/5 pointer-events-none" />
-            )}
-            <div className="flex items-center gap-4 relative z-10">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors ${
-                selected === idx
-                  ? status === 'idle'
-                    ? 'bg-blue-500 border-transparent text-white'
-                    : status === 'correct'
-                      ? 'bg-emerald-500 border-transparent text-white'
-                      : 'bg-red-500 border-transparent text-white'
-                  : 'bg-white/5 border-white/10 text-zinc-500 group-hover:text-white group-hover:border-white/20'
-              }`}>
-                {String.fromCharCode(65 + idx)}
-              </div>
-              <span className={`text-lg transition-colors ${selected === idx ? 'text-white font-medium' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
-                {opt}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className="min-h-[80px]">
-        {status === 'idle' ? (
-          <button
-            onClick={handleSubmit}
-            disabled={selected === null}
-            className="w-full py-5 rounded-2xl bg-white text-black font-bold disabled:opacity-20 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-98 transition-all text-lg cursor-pointer hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-          >
-            Authenticate Response
-          </button>
-        ) : status === 'correct' ? (
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 text-emerald-400">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <CheckCircle size={28} weight="fill" />
-              </div>
-              <div>
-                <span className="block font-bold text-lg">Signature Verified</span>
-                <span className="text-sm opacity-60">
-                  {attempts[question.id] === 1 ? '+10 XP validated to your neural link' : 'Protocol confirmed (Retake complete)'}
-                </span>
-              </div>
-            </div>
-            <button onClick={handleNextQ} className="px-8 py-4 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer">
-              {currentQ < questions.length - 1 ? 'Proceed to Next Task' : 'Finalize Session'}
-            </button>
-          </motion.div>
-        ) : (
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex flex-col items-center sm:items-stretch gap-6">
-            <div className="flex items-center gap-4 text-red-400">
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <XIcon size={24} weight="bold" />
-              </div>
-              <div>
-                <span className="block font-bold text-lg text-red-400">Verification Failed {attempts[question.id] === 1 && userXP >= 20 ? '(-10 XP)' : ''}</span>
-                <p className="text-sm opacity-60">
-                  Almost! don't worry, learning takes time. Review the concept and try again.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
-              <button onClick={() => onReviewRedirect(question.hintPageId)} className="px-6 py-3 rounded-xl bg-white/5 text-white border border-white/10 text-sm font-bold hover:bg-white/10 transition-colors cursor-pointer">
-                Review Concept
-              </button>
-              <button onClick={() => { setSelected(null); setStatus('idle'); }} className="px-6 py-3 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-400 transition-colors shadow-lg shadow-red-500/20 cursor-pointer">
-                Try Access Again
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </div>
+    <div className="flex items-center justify-center py-24 text-zinc-500 text-sm font-serif italic">
+      Initializing interactive simulation...
     </div>
   );
 }

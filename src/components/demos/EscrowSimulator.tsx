@@ -129,7 +129,7 @@ export default function EscrowSimulator() {
             <FileCode size={20} className="text-emerald-500" />
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Escrow.sol</span>
           </div>
-          <div className="text-[10px] text-zinc-500 font-mono italic">Hover icons for explanations</div>
+          <div className="text-[10px] text-zinc-500 font-mono italic">Hover or focus the icons for explanations</div>
         </div>
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 font-mono text-[12px] lg:text-[13px] leading-relaxed scrollbar-thin scrollbar-thumb-zinc-800">
           {ESCROW_CODE.map((line, idx) => {
@@ -148,8 +148,15 @@ export default function EscrowSimulator() {
                 
                 {line.tooltip && (
                   <div className="relative shrink-0 flex items-center">
-                    <Info size={14} className="text-zinc-600 group-hover:text-emerald-400 cursor-help transition-colors" />
-                    <div className="absolute bottom-full right-0 mb-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal">
+                    <span
+                      tabIndex={0}
+                      role="img"
+                      aria-label={line.tooltip}
+                      className="outline-none rounded focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-help"
+                    >
+                      <Info size={14} className="text-zinc-600 group-hover:text-emerald-400 group-focus-within:text-emerald-400 transition-colors" />
+                    </span>
+                    <div className="absolute bottom-full right-0 mb-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-normal">
                       <div className="bg-zinc-800 text-zinc-100 text-[11px] p-3 rounded-lg border border-zinc-700 w-48 sm:w-56 lg:w-64 shadow-2xl">
                         <div className="flex items-center gap-2 mb-1 text-emerald-400 font-bold uppercase tracking-tighter text-[9px]">
                           <Info size={12} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wallet, 
@@ -12,7 +12,6 @@ import {
   Database,
   ArrowRight,
   ShieldCheck,
-  WarningCircle,
   HardDrive
 } from '@phosphor-icons/react';
 
@@ -20,15 +19,14 @@ type Stage = 'idle' | 'creation' | 'broadcast' | 'mempool' | 'validation' | 'inc
 
 export default function TransactionLifecycleDemo() {
   const [stage, setStage] = useState<Stage>('idle');
-  const [progress, setProgress] = useState(0);
   const [recipient, setRecipient] = useState('0x71C...49a1');
   const [amount, setAmount] = useState('0.5');
-  const [fee, setFee] = useState('medium'); // low, medium, high
-  
+  const [fee, setFee] = useState<'low' | 'medium' | 'high'>('medium');
+
   const stages: Stage[] = ['creation', 'broadcast', 'mempool', 'validation', 'inclusion', 'confirmation', 'success'];
-  
+
   const nextStage = () => {
-    const currentIndex = stages.indexOf(stage as any);
+    const currentIndex = stages.indexOf(stage);
     if (currentIndex < stages.length - 1) {
       setStage(stages[currentIndex + 1]);
     } else if (stage === 'idle') {
@@ -38,8 +36,9 @@ export default function TransactionLifecycleDemo() {
 
   const reset = () => {
     setStage('idle');
-    setProgress(0);
   };
+
+  const myTxIndex = fee === 'high' ? 2 : fee === 'medium' ? 9 : 14;
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col min-h-[600px]">
@@ -54,7 +53,7 @@ export default function TransactionLifecycleDemo() {
             <div 
               key={s} 
               className={`h-1.5 w-8 rounded-full transition-all duration-500 ${
-                stages.indexOf(stage as any) >= i ? 'bg-blue-500' : 'bg-zinc-200 dark:bg-zinc-800'
+                stages.indexOf(stage) >= i ? 'bg-blue-500' : 'bg-zinc-200 dark:bg-zinc-800'
               }`}
             />
           ))}
@@ -105,24 +104,30 @@ export default function TransactionLifecycleDemo() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1 block">To Address</label>
-                    <div className="p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-mono truncate">
-                      {recipient}
-                    </div>
+                    <input
+                      value={recipient}
+                      onChange={(e) => setRecipient(e.target.value)}
+                      className="w-full p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-mono truncate outline-none focus:border-blue-500"
+                    />
                   </div>
                   
                   <div>
                     <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1 block">Amount</label>
                     <div className="flex items-end gap-2">
-                      <div className="p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-lg font-medium flex-1">
-                        {amount} ETH
-                      </div>
+                      <input
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        inputMode="decimal"
+                        className="p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-lg font-medium flex-1 outline-none focus:border-blue-500"
+                      />
+                      <span className="text-zinc-500 font-medium pb-3">ETH</span>
                     </div>
                   </div>
 
                   <div>
                     <label className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1 block">Priority (Gas Fee)</label>
                     <div className="grid grid-cols-3 gap-2">
-                      {['low', 'medium', 'high'].map(f => (
+                      {(['low', 'medium', 'high'] as const).map(f => (
                         <button 
                           key={f}
                           onClick={() => setFee(f)}
@@ -250,16 +255,16 @@ export default function TransactionLifecycleDemo() {
                     key={i}
                     layoutId={`tx-${i}`}
                     className={`h-16 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
-                      i === 9 
+                      i === myTxIndex 
                         ? 'bg-blue-600 border-blue-500 shadow-xl shadow-blue-500/20' 
                         : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'
                     }`}
                   >
-                    <div className={`w-6 h-1 rounded-full ${
+                    <div className="w-6 h-1 rounded-full ${
                        i % 3 === 0 ? 'bg-red-500' : i % 3 === 1 ? 'bg-orange-500' : 'bg-emerald-500'
-                    }`} />
-                    <span className={`text-[8px] font-mono ${i === 9 ? 'text-blue-100' : 'text-zinc-400'}`}>TX-{(Math.random() * 1000).toFixed(0)}</span>
-                    {i === 9 && <span className="text-[6px] uppercase font-bold text-white tracking-widest">Yours</span>}
+                    }" />
+                    <span className={`text-[8px] font-mono ${i === myTxIndex ? 'text-blue-100' : 'text-zinc-400'}`}>TX-{(i * 137) % 1000}</span>
+                    {i === myTxIndex && <span className="text-[6px] uppercase font-bold text-white tracking-widest">Yours</span>}
                   </motion.div>
                 ))}
               </div>
@@ -271,7 +276,7 @@ export default function TransactionLifecycleDemo() {
                   </div>
                   <div>
                     <div className="text-xs font-bold uppercase tracking-wider text-zinc-400">Position</div>
-                    <div className="text-sm font-medium">Queue prioritizes high fees</div>
+                    <div className="text-sm font-medium">#{myTxIndex + 1} of 16 in queue</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -384,7 +389,7 @@ export default function TransactionLifecycleDemo() {
             >
               <div className="mb-8 text-center">
                 <h4 className="text-lg font-medium">Packing the Block</h4>
-                <p className="text-sm text-zinc-500">Your transaction is bundled with {Math.floor(Math.random() * 500) + 1500} others.</p>
+                <p className="text-sm text-zinc-500">Your transaction is bundled with 1,842 others.</p>
               </div>
 
               <div className="relative w-48 h-48 bg-zinc-50 dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-3xl p-4 flex flex-wrap gap-1 content-start overflow-hidden">

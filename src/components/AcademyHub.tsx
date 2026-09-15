@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PlayCircle, BookOpen, Trophy, ArrowRight, Sparkles, X, Shield, UserCircle } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { PlayCircle, BookOpen, Trophy, ArrowRight, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import SignInModal from './SignInModal';
 import { useAuth } from '../contexts/AuthContext';
 import { courseData } from '../data/courseData';
-import { signInWithGoogle } from '../firebase';
 
 export default function AcademyHub() {
   const { user, profile } = useAuth();
-  const navigate = useNavigate();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   // Calculate overall progress
   const allPages = useMemo(() => {
@@ -32,88 +30,18 @@ export default function AcademyHub() {
     }
   };
 
-  const handleSignIn = async () => {
-    setAuthError(null);
-    try {
-      await signInWithGoogle();
-      setShowAuthModal(false);
-      navigate('/learn/course');
-    } catch (error: any) {
-      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
-        return;
-      }
-      if (error.code === 'auth/unauthorized-domain') {
-        setAuthError("This domain is not authorized for OAuth. Please add it in the Firebase Console.");
-      } else {
-        setAuthError(error.message || "Failed to sign in. Please try again.");
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
       <div className="fixed inset-0 noise-overlay z-50 pointer-events-none" />
       <Navbar />
       
       {/* Auth Modal */}
-      <AnimatePresence>
-        {showAuthModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAuthModal(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
-            >
-              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-500/20 to-red-500/20 opacity-50 pointer-events-none" />
-              
-              <button 
-                onClick={() => setShowAuthModal(false)}
-                className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="p-8 pt-12 flex flex-col items-center text-center relative z-10">
-                <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-                  <Trophy className="w-8 h-8 text-orange-400" />
-                </div>
-                
-                <h3 className="text-2xl font-serif mb-2">Save Your Progress</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed mb-8">
-                  Create a free account to track your course progress, earn XP, and claim exclusive blockchain badges as you learn.
-                </p>
-
-                {authError && (
-                  <div className="w-full p-3 mb-6 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs text-left flex items-start gap-2">
-                    <Shield className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{authError}</span>
-                  </div>
-                )}
-
-                <button 
-                  onClick={handleSignIn}
-                  className="w-full py-4 bg-white text-black rounded-xl font-medium hover:scale-[1.02] transition-all flex items-center justify-center gap-2 cursor-pointer hover:bg-gradient-to-r hover:from-blue-600 hover:to-red-600 hover:text-white"
-                >
-                  <UserCircle className="w-5 h-5" />
-                  Continue with Google
-                </button>
-                
-                <p className="text-xs text-zinc-500 mt-6">
-                  By continuing, you agree to our Terms of Service and Privacy Policy.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <SignInModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        title="Save Your Progress"
+        subtitle="Create a free account to track your course progress, earn XP, and claim exclusive blockchain badges as you learn."
+      />
 
       <main className="max-w-7xl mx-auto px-6 md:px-8 pt-20 pb-32 relative">
         {/* Animated Flowy Gradient Background */}

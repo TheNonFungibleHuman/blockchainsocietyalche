@@ -14,6 +14,7 @@ interface Node {
 
 const NUM_NODES = 8;
 const RADIUS = 2.8; // Reduced from 3.2 for better containment
+const SUCCESS_MESSAGE_MS = 3000;
 
 const getNodes = (isCentralized: boolean): Node[] => {
   const nodes: Node[] = [];
@@ -195,28 +196,48 @@ export default function NetworkDemo() {
   const [isCentralized, setIsCentralized] = useState(true);
   const [offlineNodes, setOfflineNodes] = useState<number[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleToggleMode = (centralized: boolean) => {
     setIsCentralized(centralized);
     setOfflineNodes([]);
     setShowSuccess(false);
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
   };
 
   const toggleNode = (id: number) => {
+    const isGoingOffline = !offlineNodes.includes(id);
+
     setOfflineNodes(prev => {
       const isCurrentlyOffline = prev.includes(id);
-      if (isCurrentlyOffline) return prev.filter(n => n !== id);
-      
-      const newOffline = [...prev, id];
-      if (!isCentralized) {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      }
-      return newOffline;
+      return isCurrentlyOffline ? prev.filter(n => n !== id) : [...prev, id];
     });
+
+    if (!isCentralized && isGoingOffline) {
+      setShowSuccess(true);
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+      successTimeoutRef.current = setTimeout(() => setShowSuccess(false), SUCCESS_MESSAGE_MS);
+    }
   };
 
   const isMainServerDown = isCentralized && offlineNodes.includes(0);
+
+  const nodeInfo = useMemo(
+    () => getNodes(isCentralized).map((n) => ({ id: n.id, label: n.label, type: n.type })),
+    [isCentralized],
+  );
 
   return (
     <div className="w-full border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 md:p-8 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col items-center overflow-hidden">
@@ -273,7 +294,7 @@ export default function NetworkDemo() {
               <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Guide</span>
             </div>
             <p className="text-[9px] text-zinc-600 dark:text-zinc-400 leading-tight">
-              Kill nodes to see how data reacts.
+              Toggle nodes to see how data reacts.
             </p>
           </div>
           
@@ -283,7 +304,32 @@ export default function NetworkDemo() {
           </div>
         </div>
       </div>
-      
+
+      <div className="mt-4 w-full">
+        <p id="node-toggle-label" className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">
+          Node status (keyboard accessible)
+        </p>
+        <div role="group" aria-labelledby="node-toggle-label" className="flex flex-wrap gap-2">
+          {nodeInfo.map((node) => {
+            const isOffline = offlineNodes.includes(node.id);
+            return (
+              <button
+                key={node.id}
+                onClick={() => toggleNode(node.id)}
+                aria-pressed={isOffline}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-all cursor-pointer ${
+                  isOffline
+                    ? 'bg-red-500/10 border-red-500/30 text-red-500'
+                    : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-blue-500'
+                }`}
+              >
+                {node.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
         <div className={`p-4 rounded-xl border transition-all ${isCentralized ? 'bg-blue-500/5 border-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800 opacity-50'}`}>
           <div className="flex items-center gap-2 mb-2">
