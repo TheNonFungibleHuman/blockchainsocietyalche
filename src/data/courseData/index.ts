@@ -22,3 +22,16 @@ export const courseData = {
   introduction,
   parts: [part1, part2, part3, part4, part5, part6],
 };
+
+// Course registry: add new courses here to make them routable at /learn/course/:slug.
+export const courses = [courseData];
+
+export const coursesBySlug: Record<string, typeof courseData> = Object.fromEntries(
+  courses.map((course) => [course.id, course])
+);
+
+export const DEFAULT_COURSE_SLUG = courseData.id;
+
+export function getCourseBySlug(slug: string): typeof courseData | undefined {
+  return coursesBySlug[slug];
+}

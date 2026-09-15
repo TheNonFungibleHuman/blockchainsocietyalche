@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Home from './components/Home';
 import Blocknauts from './components/Blocknauts';
@@ -11,6 +11,7 @@ import Settings from './components/Settings';
 import NotFound from './components/NotFound';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './contexts/AuthContext';
+import { DEFAULT_COURSE_SLUG } from './data/courseData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rocket, Sparkles, AlertCircle, RefreshCcw } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -158,7 +159,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/blocknauts" element={<Blocknauts />} />
             <Route path="/learn" element={<AcademyHub />} />
-            <Route path="/learn/course" element={<Course />} />
+            <Route path="/learn/course" element={<Navigate to={`/learn/course/${DEFAULT_COURSE_SLUG}`} replace />} />
+            <Route path="/learn/course/:courseSlug" element={<Course />} />
             <Route path="/learn/leaderboard" element={<Leaderboard />} />
             <Route path="/learn/resources" element={<Resources />} />
             <Route path="/profile" element={<Profile />} />

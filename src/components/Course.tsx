@@ -1,317 +1,159 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Circle, BookOpen, PlayCircle, LockKey, CaretRight, CaretLeft, CaretDown, BookBookmark, Trophy, FileText, X as XIcon, ArrowRight, Shield, List } from '@phosphor-icons/react';
-import { Link } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import { courseData } from '../data/courseData';
+import { Suspense, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { BookBookmark, FileText, Trophy, List, LockKey, CaretRight } from '@phosphor-icons/react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { LiveQueryProvider, useLiveQuery } from '@sanity/preview-kit';
 import Navbar from './Navbar';
-import Quiz from './course/Quiz';
+import NotFound from './NotFound';
 import { useAuth } from '../contexts/AuthContext';
-import { completePage, finishQuiz, getLeaderboard, markWelcomeWatched, saveQuizState } from '../lib/lmsApi';
-const CexDexDemo = lazy(() => import('./demos/CexDexDemo'));
-const TransactionLifecycleDemo = lazy(() => import('./demos/TransactionLifecycleDemo'));
-const ConsensusSimulator = lazy(() => import('./demos/ConsensusSimulator'));
-const IncentiveDesignLab = lazy(() => import('./demos/IncentiveDesignLab'));
-const EscrowSimulator = lazy(() => import('./demos/EscrowSimulator'));
-const TokenSupplySimulator = lazy(() => import('./demos/TokenSupplySimulator'));
-const NFTMetadataInspector = lazy(() => import('./demos/NFTMetadataInspector'));
-const BridgeFlowSimulator = lazy(() => import('./demos/BridgeFlowSimulator'));
-const CareerPathFinder = lazy(() => import('./demos/CareerPathFinder'));
+import { DEFAULT_COURSE_SLUG } from '../data/courseData';
+import { getCourseBySlug, COURSE_BY_SLUG_QUERY, type CourseContent as CourseContentData } from '../lib/courseContent';
+import { sanityClient, sanityReadToken } from '../lib/sanity';
+import { useCourseProgress } from './course/useCourseProgress';
+import { useCourseNavigation } from './course/useCourseNavigation';
+import CourseSidebar from './course/CourseSidebar';
+import CourseRightPane from './course/CourseRightPane';
+import CourseContent from './course/CourseContent';
+import type { RightPaneTab } from './course/types';
+
+function CourseLoading() {
+  return (
+    <div className="h-screen bg-[#050505] text-white flex flex-col items-center justify-center gap-4">
+      <div className="w-8 h-8 border-2 border-zinc-200 dark:border-zinc-800 border-t-blue-500 rounded-full animate-spin" />
+      <p className="text-xs text-zinc-500 italic font-serif">Loading course…</p>
+    </div>
+  );
+}
+
+function CourseError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="h-screen bg-[#050505] text-white flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center">
+        <LockKey size={28} className="text-zinc-500" />
+      </div>
+      <h2 className="font-serif text-2xl text-white">Couldn't load this course</h2>
+      <p className="text-zinc-400 max-w-md text-sm leading-relaxed">
+        We couldn't reach the content service. Check your connection and try again.
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onRetry}
+          className="px-6 py-3 bg-white text-black font-bold rounded-2xl hover:scale-105 transition-transform cursor-pointer"
+        >
+          Try Again
+        </button>
+        <Link to="/learn" className="px-6 py-3 border border-white/10 text-zinc-300 font-bold rounded-2xl hover:border-white/30 transition-colors cursor-pointer">
+          Back to Academy
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export default function Course() {
+  const { courseSlug } = useParams();
+  const [searchParams] = useSearchParams();
+  const slug = courseSlug ?? DEFAULT_COURSE_SLUG;
+  const preview = searchParams.get('preview') === 'true';
+  const [course, setCourse] = useState<CourseContentData | null>(null);
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus('loading');
+    getCourseBySlug(slug)
+      .then((data) => {
+        if (cancelled) return;
+        setCourse(data);
+        setStatus('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCourse(null);
+        setStatus('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, retryKey]);
+
+  if (status === 'loading') return <CourseLoading />;
+  if (status === 'error') return <CourseError onRetry={() => setRetryKey((k) => k + 1)} />;
+  if (!course) return <NotFound />;
+
+  // Live draft preview: when ?preview=true and a viewer token is set, subscribe
+  // to Sanity live updates so edits appear in the Studio's Presentation iframe.
+  if (preview && sanityReadToken) {
+    return (
+      <Suspense fallback={<CourseLoading />}>
+        <LiveQueryProvider client={sanityClient} token={sanityReadToken}>
+          <LiveCourse initialCourse={course} slug={slug} />
+        </LiveQueryProvider>
+      </Suspense>
+    );
+  }
+
+  return <CourseReader course={course} />;
+}
+
+function LiveCourse({ initialCourse, slug }: { initialCourse: CourseContentData; slug: string }) {
+  const [liveCourse] = useLiveQuery<CourseContentData | null>(initialCourse, COURSE_BY_SLUG_QUERY, { slug });
+  return liveCourse ? <CourseReader course={liveCourse} /> : <NotFound />;
+}
+
+function CourseReader({ course }: { course: any }) {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const courseId: string = course.id;
 
-  // Navigation State
-  const [activePart, setActivePart] = useState<string | null>((courseData as any).introduction?.[0] ? null : courseData.parts[0].id);
-  const [activeModule, setActiveModule] = useState<string | null>((courseData as any).introduction?.[0] ? null : courseData.parts[0].modules[0].id);
-  const [activePage, setActivePage] = useState<string>((courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const hasResumed = useRef(false);
-  
   // UI State
-  const [expandedParts, setExpandedParts] = useState<string[]>([courseData.parts[0].id]);
-  const [rightPaneTab, setRightPaneTab] = useState<'glossary' | 'resources' | 'leaderboard' | null>(null);
+  const [rightPaneTab, setRightPaneTab] = useState<RightPaneTab>(null);
 
-  // Leaderboard Data
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const {
+    completedPages,
+    userXP,
+    quizStates,
+    videoLoading,
+    setVideoLoading,
+    leaderboard,
+    handleUpdateQuizState,
+    handleFinishQuiz,
+    handleFinishWelcome,
+    markPageComplete,
+  } = useCourseProgress({ user, profile, authLoading, refreshProfile, rightPaneTab, courseId });
 
-  // Progress & Gamification State (local state synced with Supabase)
-  const [completedPages, setCompletedPages] = useState<string[]>([]);
-  const [userXP, setUserXP] = useState(0); 
-  const [quizStates, setQuizStates] = useState<Record<string, { currentQ: number, attempts: Record<string, number>, finished: boolean }>>({});
-  const [videoLoading, setVideoLoading] = useState(true);
-  
-  const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // Flattened pages for robust forward/back navigation
-  const allPages = useMemo(() => {
-    const introPages = (courseData as any).introduction?.map(page => ({ partId: null, moduleId: null, pageId: page.id })) || [];
-    const mainPages = courseData.parts?.flatMap(p => 
-      p.modules?.flatMap(m => 
-        m.pages?.map(page => ({ partId: p.id, moduleId: m.id, pageId: page.id })) || []
-      ) || []
-    ) || [];
-    return [...introPages, ...mainPages];
-  }, []);
-
-  // Derived Data
-  const currentPartData = useMemo(() => courseData.parts.find(p => p.id === activePart), [activePart]);
-  const currentModuleData = useMemo(() => currentPartData?.modules.find(m => m.id === activeModule), [currentPartData, activeModule]);
-  const currentPageData = useMemo(() => {
-    if (!activeModule) {
-      return (courseData as any).introduction?.find(p => p.id === activePage);
-    }
-    return currentModuleData?.pages.find(p => p.id === activePage);
-  }, [currentModuleData, activeModule, activePage]);
-
-  const currentIndex = allPages.findIndex(p => p.moduleId === activeModule && p.pageId === activePage);
-  const publishedPartIds = useMemo(() => new Set(courseData.parts.map(part => part.id)), []);
-
-  // Scroll to top and handle video loading on page change
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo(0, 0);
-    }
-    
-    // Only trigger video loading if it's a video page
-    if (currentPageData?.type === 'video') {
-      setVideoLoading(true);
-    }
-  }, [activePage, activeModule, currentPageData?.type]);
-
-  // Sync local state with Supabase profile on load
-  useEffect(() => {
-    if (profile) {
-      // Use local state if it matches or if we just synced
-      const profilePages = profile.completedPages || [];
-      if (JSON.stringify(profilePages) !== JSON.stringify(completedPages)) {
-        setCompletedPages(profilePages);
-      }
-      
-      if (userXP !== profile.xp) setUserXP(profile.xp || 0);
-
-      try {
-        if (profile.quizStates) {
-          const parsed = JSON.parse(profile.quizStates);
-          if (JSON.stringify(parsed) !== JSON.stringify(quizStates)) {
-            setQuizStates(parsed);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse quiz states", e);
-      }
-    } else if (!authLoading && !user) {
-      // Fallback for unauthenticated users (demo mode)
-      if (userXP === 0) setUserXP(140);
-    }
-  }, [profile, user, authLoading]); 
-
-
-  // Resume logic: Jump to the most recently completed page if we haven't already
-  useEffect(() => {
-    if (profile && !hasResumed.current && profile.completedPages && profile.completedPages.length > 0) {
-      hasResumed.current = true;
-      
-      let maxIndex = -1;
-      allPages.forEach((page, index) => {
-        const globalId = page.moduleId ? `${page.moduleId}-${page.pageId}` : page.pageId;
-        if (profile.completedPages?.includes(globalId) || profile.completedPages?.includes(page.pageId)) {
-          maxIndex = index;
-        }
-      });
-
-      if (maxIndex !== -1) {
-        const lastPage = allPages[maxIndex];
-        // Determine the first page ID to check if we are still at the start
-        const firstPageId = (courseData as any).introduction?.[0]?.id || courseData.parts[0].modules[0].pages[0].id;
-        
-        if (activePage === firstPageId) {
-          setActivePart(lastPage.partId);
-          setActiveModule(lastPage.moduleId);
-          setActivePage(lastPage.pageId);
-          
-          // Expand the part containing the page
-          if (lastPage.partId && !expandedParts.includes(lastPage.partId)) {
-            setExpandedParts(prev => [...prev, lastPage.partId]);
-          }
-        }
-      }
-    }
-  }, [profile, allPages, activePage, expandedParts]); // Keep activePage to know if we are at start
-
-  const refreshTrustedProfile = async () => {
-    try {
-      await refreshProfile();
-    } catch (error) {
-      console.error('Failed to refresh profile', error);
-    }
-  };
-
-
-  const handleUpdateQuizState = (moduleId: string, newState: any) => {
-    setQuizStates(prev => {
-      const nextModuleState = { ...(prev[moduleId] || { currentQ: 0, attempts: {}, finished: false }), ...newState };
-      const updated = {
-        ...prev,
-        [moduleId]: nextModuleState
-      };
-
-      saveQuizState(moduleId, nextModuleState).catch(error => {
-        console.error('Failed to save quiz state', error);
-      });
-
-      return updated;
-    });
-  };
-
-  const handleFinishQuiz = async (moduleId: string) => {
-    try {
-      const result = await finishQuiz(moduleId);
-      if (result?.total_xp !== undefined) {
-        setUserXP(result.total_xp);
-      }
-      await refreshTrustedProfile();
-    } catch (error) {
-      console.error('Failed to finish quiz', error);
-    }
-  };
-  
-  // Fetch Leaderboard Data
-  useEffect(() => {
-    if (rightPaneTab === 'leaderboard') {
-      getLeaderboard(user?.id, 10)
-        .then(setLeaderboard)
-        .catch(error => console.error('Error fetching leaderboard', error));
-    }
-  }, [rightPaneTab, user?.id]);
+  const {
+    activeModule,
+    activePage,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    isSidebarCollapsed,
+    setIsSidebarCollapsed,
+    expandedParts,
+    scrollRef,
+    allPages,
+    currentModuleData,
+    currentPageData,
+    currentIndex,
+    isPageLocked,
+    togglePart,
+    selectPage,
+    handleNext,
+    handlePrev,
+    handleReviewRedirect,
+  } = useCourseNavigation({
+    course,
+    profile,
+    completedPages,
+    quizStates,
+    markPageComplete,
+    handleFinishWelcome,
+    setVideoLoading,
+  });
 
   if (authLoading) {
     return null;
   }
-
-  const handleFinishWelcome = async () => {
-    if (!user) return;
-    try {
-      await markWelcomeWatched();
-      await refreshTrustedProfile();
-    } catch (error) {
-      console.error('Error setting welcomeWatched', error);
-    }
-  };
-
-  const isPageLocked = (pageIndex: number) => {
-    if (pageIndex <= 0) return false;
-    
-    if (profile?.isTester) return false;
-    
-    const page = allPages[pageIndex];
-    
-    // Only allow navigation into published course parts.
-    if (page.partId && !publishedPartIds.has(page.partId)) {
-      return true;
-    }
-
-    // 2. Welcome Video Lock Check
-    // We check both the Supabase profile and the immediate local completedPages state
-    // index 0 is always the welcome video intro
-    const welcomePage = allPages[0];
-    const welcomeGlobalId = welcomePage.moduleId ? `${welcomePage.moduleId}-${welcomePage.pageId}` : welcomePage.pageId;
-    const hasWatchedWelcome = !!profile?.welcomeWatched || completedPages.includes(welcomeGlobalId) || completedPages.includes(welcomePage.pageId);
-
-    if (pageIndex > 0 && !hasWatchedWelcome) {
-      return true;
-    }
-
-    // 3. Sequential lock: Previous page must be completed
-    const prevPage = allPages[pageIndex - 1];
-    const prevGlobalId = prevPage.moduleId ? `${prevPage.moduleId}-${prevPage.pageId}` : prevPage.pageId;
-    let isPrevCompleted = completedPages.includes(prevGlobalId) || completedPages.includes(prevPage.pageId);
-    
-    // Fallback: If the previous page is in a module whose quiz is already finished, treat it as completed
-    if (!isPrevCompleted && prevPage.moduleId && quizStates[prevPage.moduleId]?.finished) {
-      isPrevCompleted = true;
-    }
-    
-    if (!isPrevCompleted) return true;
-
-    return false;
-  };
-
-  const togglePart = (partId: string) => {
-    setExpandedParts(prev => 
-      prev.includes(partId) ? prev.filter(id => id !== partId) : [...prev, partId]
-    );
-  };
-
-  const handleNext = async () => {
-    const globalPageId = activeModule ? `${activeModule}-${activePage}` : activePage;
-    
-    // Unlock course if this was the welcome video
-    if ((currentPageData as any)?.isWelcome) {
-      handleFinishWelcome();
-    }
-
-    // Support legacy completion format (just pageId) for backwards compatibility
-    const isAlreadyCompleted = completedPages.includes(globalPageId) || completedPages.includes(activePage);
-    
-    if (!isAlreadyCompleted) {
-      const newCompleted = [...completedPages, globalPageId];
-      setCompletedPages(newCompleted);
-      try {
-        const result = await completePage(activeModule, activePage);
-        if (result?.total_xp !== undefined) {
-          setUserXP(result.total_xp);
-        }
-        refreshTrustedProfile();
-      } catch (error) {
-        console.error('Failed to persist page completion', error);
-      }
-    }
-
-    if (currentIndex < allPages.length - 1) {
-      const nextIndex = currentIndex + 1;
-      
-      if (!profile?.isTester) {
-        const nextPage = allPages[nextIndex];
-        if (nextPage.partId && !publishedPartIds.has(nextPage.partId)) {
-          return;
-        }
-      }
-
-      const next = allPages[nextIndex];
-      setActivePart(next.partId);
-      setActiveModule(next.moduleId);
-      setActivePage(next.pageId);
-      
-      // Auto-expand the part if we navigated into a new one
-      if (next.partId && !expandedParts.includes(next.partId)) {
-        setExpandedParts(prev => [...prev, next.partId]);
-      }
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      const prev = allPages[currentIndex - 1];
-      setActivePart(prev.partId);
-      setActiveModule(prev.moduleId);
-      setActivePage(prev.pageId);
-      
-      if (prev.partId && !expandedParts.includes(prev.partId)) {
-        setExpandedParts(currentExpanded => [...currentExpanded, prev.partId]);
-      }
-    }
-  };
-
-  const handleReviewRedirect = (pageId: string) => {
-    const target = allPages.find(p => p.pageId === pageId);
-    if (target) {
-      setActivePart(target.partId);
-      setActiveModule(target.moduleId);
-      setActivePage(target.pageId);
-    }
-  };
 
   // Calculate overall progress
   const progressPercentage = Math.round((completedPages.length / allPages.length) * 100);
@@ -333,172 +175,22 @@ export default function Course() {
         )}
 
         {/* LEFT PANE: Progress Sidebar */}
-        <aside className={`fixed inset-y-0 left-0 z-[70] w-85 bg-[#080808] border-r border-white/5 transform transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) md:relative ${isSidebarCollapsed ? 'md:-ml-85 opacity-0' : 'md:ml-0 opacity-100'} ${isSidebarOpen ? 'translate-x-[0px]' : '-translate-x-full md:translate-x-0'} flex flex-col h-full overflow-y-auto`}>
-          <div className="p-8 border-b border-white/5 sticky top-0 z-10 bg-[#080808]/95 backdrop-blur-xl">
-            {/* Sidebar Toggle/Back Header */}
-            <div className="flex items-center justify-between mb-8">
-              <Link to="/learn" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 hover:text-white transition-all cursor-pointer group">
-                <CaretLeft weight="bold" className="group-hover:-translate-x-1 transition-transform" /> Back
-              </Link>
-
-              <button 
-                onClick={() => {
-                  if (window.innerWidth < 768) {
-                    setIsSidebarOpen(false);
-                  } else {
-                    setIsSidebarCollapsed(true);
-                  }
-                }}
-                className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-white transition-all cursor-pointer"
-                title="Collapse Sidebar"
-              >
-                <List size={22} />
-              </button>
-            </div>
-            
-            <div className="mb-6">
-               <div className="text-[10px] font-bold text-zinc-400 mb-1 uppercase tracking-widest">Enrollment 01</div>
-               <h2 className="font-serif text-2xl tracking-tight leading-tight text-white">{courseData.title}</h2>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                <span className="text-zinc-400">Sync Status</span>
-                <span className="text-white">{progressPercentage}%</span>
-              </div>
-              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercentage}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="bg-accent-gradient h-full rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 flex flex-col gap-2">
-            {/* Introduction Section */}
-            {(courseData as any).introduction?.map((page: any, idx: number) => {
-              const isActive = activePage === page.id && activeModule === null;
-              const isCompleted = completedPages.includes(page.id);
-              const isLocked = isPageLocked(idx);
-              return (
-                <button
-                  key={page.id}
-                  onClick={() => {
-                    if (isLocked) return;
-                    setActivePart(null);
-                    setActiveModule(null);
-                    setActivePage(page.id);
-                    setIsSidebarOpen(false);
-                  }}
-                  disabled={isLocked}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
-                    isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                  } ${
-                    isActive 
-                      ? 'bg-blue-900/30 text-white font-bold border-2 border-blue-500/50 shadow-lg' 
-                      : 'hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {isLocked ? (
-                    <LockKey size={18} weight="bold" className="text-zinc-400 shrink-0" />
-                  ) : isCompleted ? (
-                    <CheckCircle size={18} weight="fill" className="text-emerald-500 shrink-0" />
-                  ) : isActive ? (
-                    <CaretRight size={18} weight="bold" className="text-blue-500 shrink-0" />
-                  ) : (
-                    <PlayCircle size={18} weight="bold" className="text-zinc-400 shrink-0" />
-                  )}
-                  <span className="text-sm font-medium truncate">{page.title}</span>
-                </button>
-              );
-            })}
-
-            {/* Course Parts */}
-            {courseData.parts.map((part) => {
-              const isExpanded = expandedParts.includes(part.id);
-              return (
-                <div key={part.id} className="mb-2">
-                  <button 
-                    onClick={() => togglePart(part.id)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-left cursor-pointer"
-                  >
-                    <span className="font-medium text-sm">{part.title}</span>
-                    <CaretDown className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="pl-4 pr-2 py-2 flex flex-col gap-1 border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 mt-1">
-                          {part.modules.map((module) => (
-                            <div key={module.id} className="mb-2">
-                              <div className="text-xs font-semibold text-zinc-400 mb-1 pl-2">
-                                {module.title}
-                              </div>
-                              {module.pages.map((page) => {
-                                const globalPageId = `${module.id}-${page.id}`;
-                                const isCompleted = completedPages.includes(globalPageId) || (module.id === 'module-1.1' && completedPages.includes(page.id));
-                                const isActive = activeModule === module.id && activePage === page.id;
-                                
-                                // Enhanced Locking Logic
-                                const pageIdx = allPages.findIndex(p => p.moduleId === module.id && p.pageId === page.id);
-                                const isLocked = isPageLocked(pageIdx);
-
-                                return (
-                                  <button
-                                    key={page.id}
-                                    onClick={() => {
-                                      if (isLocked) return;
-                                      setActivePart(part.id);
-                                      setActiveModule(module.id);
-                                      setActivePage(page.id);
-                                      setIsSidebarOpen(false); // Close sidebar on mobile after selection
-                                    }}
-                                    disabled={isLocked}
-                                    className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${
-                                      isActive 
-                                        ? 'bg-blue-900/30 text-white font-medium hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-red-500/10' 
-                                        : isLocked 
-                                          ? 'text-zinc-600'
-                                          : 'hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 hover:bg-gradient-to-r hover:from-blue-500/5 hover:to-red-500/5'
-                                    }`}
-                                  >
-                                    {isLocked ? (
-                                      <LockKey size={16} weight="bold" className="text-zinc-400 dark:text-zinc-600 shrink-0" />
-                                    ) : isCompleted ? (
-                                      <CheckCircle size={16} weight="fill" className="text-emerald-500 shrink-0" />
-                                    ) : isActive ? (
-                                      <CaretRight size={16} weight="bold" className="text-blue-500 shrink-0" />
-                                    ) : page.type === 'video' ? (
-                                      <PlayCircle size={16} weight="bold" className="text-zinc-400 shrink-0" />
-                                    ) : page.type === 'quiz' ? (
-                                      <Trophy size={16} weight="bold" className="text-zinc-400 shrink-0" />
-                                    ) : (
-                                      <Circle size={16} weight="bold" className="text-zinc-300 dark:text-zinc-700 shrink-0" />
-                                    )}
-                                    <span className="text-xs truncate">{page.title}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
-        </aside>
+        <CourseSidebar
+          course={course}
+          isOpen={isSidebarOpen}
+          isCollapsed={isSidebarCollapsed}
+          progressPercentage={progressPercentage}
+          activeModule={activeModule}
+          activePage={activePage}
+          completedPages={completedPages}
+          expandedParts={expandedParts}
+          allPages={allPages}
+          isPageLocked={isPageLocked}
+          onTogglePart={togglePart}
+          onSelectPage={selectPage}
+          onCloseMobile={() => setIsSidebarOpen(false)}
+          onCollapseDesktop={() => setIsSidebarCollapsed(true)}
+        />
 
         {/* CENTER PANE: Main Content */}
         <main ref={scrollRef} className="flex-1 overflow-y-auto relative bg-[#050505] flex flex-col selection:bg-blue-500/30">
@@ -600,201 +292,18 @@ export default function Course() {
                   </h1>
                 </motion.div>
 
-                <div className="flex-1">
-                  {currentPageData?.type === 'interactive' ? (
-                    <Suspense fallback={<DemoFallback />}>
-                    (currentPageData as any).componentId === 'SolscanIframe' ? (
-                      <div className="w-full h-[600px] border border-white/5 rounded-xl overflow-hidden flex flex-col bg-zinc-950">
-                        <div className="p-4 bg-[#080808] border-b border-white/5 flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-sm mb-1 text-white">Live Blockchain Explorer</h3>
-                            <p className="text-xs text-zinc-400">Inspect real-time transactions happening on the Solana blockchain.</p>
-                          </div>
-                          <a 
-                            href="https://solscan.io/" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                          >
-                            Open Solscan <ArrowRight size={14} />
-                          </a>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center" />
-                        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-                          <Shield className="w-8 h-8 text-blue-500" />
-                        </div>
-                        <h4 className="text-lg font-medium mb-2 text-white">Security Restriction</h4>
-                        <p className="text-sm text-zinc-400 max-w-md mb-6">
-                          For security reasons, Solscan (like most financial platforms) prevents its website from being embedded inside other applications to protect users from clickjacking attacks.
-                        </p>
-                        <a 
-                          href="https://solscan.io/" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="px-6 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm font-medium rounded-xl hover:border-blue-500 transition-colors"
-                        >
-                          Open Explorer in New Tab
-                        </a>
-                      </div>
-                    ) : (currentPageData as any).componentId === 'CexDexDemo' ? (
-                      <CexDexDemo />
-                    ) : (currentPageData as any).componentId === 'TransactionLifecycleDemo' ? (
-                      <TransactionLifecycleDemo />
-                    ) : (currentPageData as any).componentId === 'ConsensusSimulator' ? (
-                      <ConsensusSimulator />
-                    ) : (currentPageData as any).componentId === 'IncentiveDesignLab' ? (
-                      <IncentiveDesignLab />
-                    ) : (currentPageData as any).componentId === 'EscrowSimulator' ? (
-                      <EscrowSimulator />
-                    ) : (currentPageData as any).componentId === 'token-supply-simulator' ? (
-                      <TokenSupplySimulator />
-                    ) : (currentPageData as any).componentId === 'nft-metadata-inspector' ? (
-                      <NFTMetadataInspector />
-                    ) : (currentPageData as any).componentId === 'bridge-flow-simulator' ? (
-                      <BridgeFlowSimulator />
-                    ) : (currentPageData as any).componentId === 'CareerPathFinder' ? (
-                      <CareerPathFinder />
-                    ) : (
-                      <NetworkDemo />
-                    )
-                    </Suspense>
-                  ) : currentPageData?.type === 'quiz' && currentModuleData ? (
-                    <Quiz 
-                      questions={currentPageData.questions || []} 
-                      userXP={userXP} 
-                      onReviewRedirect={handleReviewRedirect}
-                      onComplete={handleNext}
-                      onFinishQuiz={() => handleFinishQuiz(currentModuleData.id)}
-                      quizState={quizStates[currentModuleData.id] || { currentQ: 0, attempts: {}, finished: false }}
-                      updateQuizState={(newState) => handleUpdateQuizState(currentModuleData.id, newState)}
-                    />
-                  ) : currentPageData?.type === 'video' ? (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                      <div className={`w-full rounded-3xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl relative ${(currentPageData as any).isWelcome ? "" : "aspect-video"}`}
-                           style={(currentPageData as any).isWelcome ? { paddingBottom: '46.5%', position: 'relative' } : {}}>
-                        <AnimatePresence>
-                          {videoLoading && (
-                            <motion.div 
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              className="absolute inset-0 z-10 bg-zinc-900 flex flex-col items-center justify-center gap-4 text-white"
-                            >
-                              <div className="relative w-12 h-12">
-                                <div className="absolute inset-0 border-2 border-zinc-800 rounded-full" />
-                                <motion.div 
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                  className="absolute inset-0 border-2 border-emerald-500 border-t-transparent rounded-full"
-                                />
-                              </div>
-                              <p className="text-xs uppercase tracking-[0.2em] font-bold text-zinc-500">Initializing Video Feed...</p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        <iframe 
-                          key={(currentPageData as any).videoUrl || (currentPageData as any).youtubeId}
-                          width="100%" 
-                          height="100%" 
-                          src={(currentPageData as any).videoUrl || `https://www.youtube.com/embed/${(currentPageData as any).youtubeId}?rel=0`} 
-                          title={currentPageData.title}
-                          frameBorder="0" 
-                          allow={(currentPageData as any).videoUrl ? "clipboard-write; encrypted-media; picture-in-picture" : "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"} 
-                          allowFullScreen
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          onLoad={() => setVideoLoading(false)}
-                          className={(currentPageData as any).isWelcome ? "absolute inset-0 w-full h-full z-0" : "relative z-0"}
-                        ></iframe>
-                      </div>
-                      <div className="bg-zinc-905/30 p-6 rounded-2xl border border-white/5">
-                        <h3 className="font-medium mb-2 flex items-center gap-2 text-white">
-                           <PlayCircle size={20} className="text-blue-500" /> {(currentPageData as any).isWelcome ? 'Official Onboarding' : 'Tutorial Information'}
-                        </h3>
-                        <p className="text-sm text-zinc-400 leading-relaxed">
-                          {(currentPageData as any).isWelcome 
-                            ? "This video is the official introduction and onboarding into the course. Watch the video carefully to understand the foundations of what it means to take the Blockchain 101 course, a guide to this LMS, and to unlock the full curriculum."
-                            : "This introductory video covers the key concepts you'll be exploring in this module. If you prefer to watch videos, this can serve as the course content before you attempt the quiz. The course content on the pages are more explanatory and you can go through if you prefer to read or go deeper into the subject"}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="prose prose-zinc prose-invert prose-lg max-w-none">
-                      <Suspense fallback={<DemoFallback />}>
-                      <ReactMarkdown
-                        components={{
-                          p: ({ children }) => (
-                            <p className="text-zinc-300 leading-relaxed mb-6">
-                              {children}
-                            </p>
-                          ),
-                          ul: ({ children }) => (
-                            <ul className="list-disc pl-6 mb-6 space-y-2 text-zinc-300">
-                              {children}
-                            </ul>
-                          ),
-                          ol: ({ children }) => (
-                            <ol className="list-decimal pl-6 mb-6 space-y-2 text-zinc-300">
-                              {children}
-                            </ol>
-                          ),
-                          li: ({ children }) => (
-                            <li className="leading-relaxed">
-                              {children}
-                            </li>
-                          ),
-                          h3: ({ children }) => (
-                            <h3 className="font-bold text-xl mb-4 mt-8 text-white">
-                              {children}
-                            </h3>
-                          ),
-                          strong: ({ children }) => (
-                            <strong className="font-semibold text-white">
-                              {children}
-                            </strong>
-                          ),
-                          pre: ({ children }) => <div className="not-prose">{children}</div>,
-                          code: ({ node, className, children, ...props }: any) => {
-                            const match = /language-([a-zA-Z0-9-]+)/.exec(className || '');
-                            const isBlock = match || String(children).includes('\n');
-                            
-                            if (isBlock && match && match[1] === 'interactive-hash') {
-                              return <HashDemo />;
-                            }
-                            if (isBlock && match && match[1] === 'interactive-network') {
-                              return <NetworkDemo />;
-                            }
-                            if (isBlock && match && match[1] === 'interactive-block') {
-                              return <BlockDemo />;
-                            }
-                            if (isBlock && match && match[1] === 'interactive-chain') {
-                              return <ChainDemo />;
-                            }
-                            if (isBlock && match && match[1] === 'interactive-consensus') {
-                              return <ConsensusDemo />;
-                            }
-                            if (isBlock) {
-                              return (
-                                <pre className="bg-zinc-100 dark:bg-zinc-900 p-4 rounded-xl overflow-x-auto mb-6">
-                                  <code className={className} {...props}>
-                                    {children}
-                                  </code>
-                                </pre>
-                              );
-                            }
-                            return (
-                              <code className="bg-zinc-900 text-zinc-200 text-sm font-mono px-1.5 py-0.5 rounded break-words border border-white/5" {...props}>
-                                {children}
-                              </code>
-                            );
-                          }
-                        }}
-                      >
-                        {currentPageData?.content || ''}
-                      </ReactMarkdown>
-                      </Suspense>
-                    </div>
-                  )}
-                </div>
+                <CourseContent
+                  pageData={currentPageData}
+                  moduleData={currentModuleData}
+                  userXP={userXP}
+                  videoLoading={videoLoading}
+                  setVideoLoading={setVideoLoading}
+                  quizStates={quizStates}
+                  handleUpdateQuizState={handleUpdateQuizState}
+                  handleFinishQuiz={handleFinishQuiz}
+                  handleReviewRedirect={handleReviewRedirect}
+                  handleNext={handleNext}
+                />
 
                 {/* Navigation Footer (Hidden on Quiz pages as Quiz handles its own completion) */}
                 {currentPageData?.type !== 'quiz' && (
@@ -821,87 +330,9 @@ export default function Course() {
         </main>
 
         {/* RIGHT PANE: Context Drawer */}
-        <AnimatePresence>
-          {rightPaneTab && (
-            <motion.aside 
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: window.innerWidth < 768 ? '100%' : 350, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              className="fixed md:relative inset-y-0 right-0 z-50 md:z-auto md:shrink-0 border-l border-white/5 bg-[#080808] overflow-hidden flex flex-col shadow-2xl md:shadow-none"
-            >
-              <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#080808]">
-                <h3 className="font-medium capitalize flex items-center gap-2 text-white">
-                  {rightPaneTab === 'glossary' && <BookBookmark className="text-blue-500" />}
-                  {rightPaneTab === 'resources' && <FileText className="text-blue-500" />}
-                  {rightPaneTab === 'leaderboard' && <Trophy className="text-orange-500" />}
-                  {rightPaneTab}
-                </h3>
-                <button 
-                  onClick={() => setRightPaneTab(null)}
-                  className="p-1.5 rounded-md hover:bg-white/5 text-zinc-400 transition-colors cursor-pointer"
-                >
-                  <XIcon size={16} />
-                </button>
-              </div>
-              
-              <div className="p-6 overflow-y-auto flex-1">
-                {rightPaneTab === 'glossary' && (
-                  <div className="space-y-6">
-                    <div className="text-center p-4 text-sm text-zinc-500">
-                      Glossary terms for this module will appear here.
-                    </div>
-                  </div>
-                )}
-                
-                {rightPaneTab === 'resources' && (
-                  <div className="space-y-4">
-                    <div className="text-center p-4 text-sm text-zinc-500">
-                      Additional resources for this module will appear here.
-                    </div>
-                  </div>
-                )}
-
-                {rightPaneTab === 'leaderboard' && (
-                  <div className="space-y-4">
-                    {leaderboard.length > 0 ? leaderboard.map((user) => (
-                      <div key={user.rank} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <span className={`text-sm font-medium w-4 ${user.rank <= 3 ? 'text-orange-500' : 'text-zinc-400'}`}>{user.rank}</span>
-                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-medium overflow-hidden text-white">
-                            {user.photoURL ? <img src={user.photoURL} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : user.name.charAt(0)}
-                          </div>
-                          <span className="text-sm font-medium text-white">{user.name}</span>
-                        </div>
-                        <span className="text-xs font-mono text-zinc-400">{user.xp} XP</span>
-                      </div>
-                    )) : (
-                      <div className="flex flex-col items-center justify-center py-12 gap-4">
-                         <div className="w-8 h-8 border-2 border-zinc-200 dark:border-zinc-800 border-t-blue-500 rounded-full animate-spin" />
-                         <p className="text-xs text-zinc-500 italic font-serif">Contacting ground control...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
+        <CourseRightPane tab={rightPaneTab} onClose={() => setRightPaneTab(null)} leaderboard={leaderboard} />
 
       </div>
-    </div>
-  );
-}
-
-const NetworkDemo = lazy(() => import('./NetworkDemo'));
-const HashDemo = lazy(() => import('./HashDemo'));
-const BlockDemo = lazy(() => import('./BlockDemo'));
-const ChainDemo = lazy(() => import('./ChainDemo'));
-const ConsensusDemo = lazy(() => import('./ConsensusDemo'));
-
-function DemoFallback() {
-  return (
-    <div className="flex items-center justify-center py-24 text-zinc-500 text-sm font-serif italic">
-      Initializing interactive simulation...
     </div>
   );
 }

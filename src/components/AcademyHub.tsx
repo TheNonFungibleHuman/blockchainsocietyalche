@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { PlayCircle, BookOpen, Trophy, ArrowRight, Sparkles } from 'lucide-react';
+import { PlayCircle, BookOpen, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import SignInModal from './SignInModal';
 import { useAuth } from '../contexts/AuthContext';
 import { courseData } from '../data/courseData';
+import { getCourses } from '../lib/courseContent';
 
 export default function AcademyHub() {
   const { user, profile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [courses, setCourses] = useState<{ id: string; title: string; description: string; slug: string }[]>([]);
+
+  useEffect(() => {
+    getCourses()
+      .then(setCourses)
+      .catch((error) => console.error('Failed to load courses', error));
+  }, []);
 
   // Calculate overall progress
   const allPages = useMemo(() => {
@@ -117,7 +125,7 @@ export default function AcademyHub() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Link 
-                    to="/learn/course"
+                    to={`/learn/course/${courseData.id}`}
                     className="relative z-10 shrink-0 flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold text-sm tracking-wide hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all cursor-pointer group/btn overflow-hidden"
                   >
                     <span className="relative z-10">{progressPercentage > 0 ? 'Resume Mission' : 'Initiate Sequence'}</span>
@@ -137,51 +145,51 @@ export default function AcademyHub() {
             <div className="h-px flex-1 bg-zinc-800" />
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Course Card 1 */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <Link to="/learn/course" onClick={handleCourseClick} className="group block h-full">
-                <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-white/20 transition-all duration-500 h-full flex flex-col premium-shadow group-hover:-translate-y-2 relative">
-                  <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  
-                  <div className="h-56 bg-zinc-900/40 relative overflow-hidden p-8 flex flex-col justify-between">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-red-600/20 group-hover:scale-110 transition-transform duration-1000" />
-                    <div className="relative z-10 flex justify-between items-start">
-                      <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                        Beginner
+            {/* Course Cards (from Sanity) */}
+            {courses.map((course, idx) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 + idx * 0.1 }}
+              >
+                <Link to={`/learn/course/${course.slug}`} onClick={handleCourseClick} className="group block h-full">
+                  <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-white/20 transition-all duration-500 h-full flex flex-col premium-shadow group-hover:-translate-y-2 relative">
+                    <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+                    <div className="h-56 bg-zinc-900/40 relative overflow-hidden p-8 flex flex-col justify-between">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-red-600/20 group-hover:scale-110 transition-transform duration-1000" />
+                      <div className="relative z-10 flex justify-between items-start">
+                        <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                          Course
+                        </div>
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 90 }}
+                          className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all duration-500"
+                        >
+                          <PlayCircle className="w-6 h-6" />
+                        </motion.div>
                       </div>
-                      <motion.div 
-                        whileHover={{ scale: 1.1, rotate: 90 }}
-                        className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all duration-500"
-                      >
-                        <PlayCircle className="w-6 h-6" />
-                      </motion.div>
+                      <div>
+                        <div className="text-[10px] font-bold text-zinc-500 mb-1 uppercase tracking-[0.2em]">ALCHE</div>
+                        <h3 className="text-3xl font-serif">{course.title}</h3>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-bold text-zinc-500 mb-1 uppercase tracking-[0.2em]">ALCHE-01</div>
-                      <h3 className="text-3xl font-serif">Blockchain 101</h3>
+
+                    <div className="p-8 pb-10 flex-1 flex flex-col justify-between relative z-10">
+                      <p className="text-zinc-400 text-sm leading-relaxed mb-10 text-balance">
+                        {course.description}
+                      </p>
+                      <div className="flex items-center gap-6 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-t border-white/5 pt-6">
+                        <div className="flex items-center gap-2 group-hover:text-white transition-colors">
+                          <BookOpen size={14} className="text-blue-500" /> Start Learning
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="p-8 pb-10 flex-1 flex flex-col justify-between relative z-10">
-                    <p className="text-zinc-400 text-sm leading-relaxed mb-10 text-balance">
-                      The atomic unit of Web3. Understand trust, hash functions, and why distributed consensus changes everything.
-                    </p>
-                    <div className="flex items-center gap-6 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-t border-white/5 pt-6">
-                      <div className="flex items-center gap-2 group-hover:text-white transition-colors">
-                        <BookOpen size={14} className="text-blue-500" /> 6 Parts
-                      </div>
-                      <div className="flex items-center gap-2 group-hover:text-white transition-colors">
-                        <Trophy size={14} className="text-orange-500" /> 500 XP
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
+                </Link>
+              </motion.div>
+            ))}
 
             {/* Coming Soon Card */}
             <motion.div

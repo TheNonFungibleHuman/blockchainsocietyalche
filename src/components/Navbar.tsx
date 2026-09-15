@@ -13,7 +13,7 @@ export default function Navbar() {
   const location = useLocation();
   
   // Only show the focused "Cockpit" navbar on specific course pages, NOT the Academy Hub (/learn)
-  const isCoursePage = ['/learn/course', '/learn/leaderboard', '/learn/resources'].includes(location.pathname);
+  const isCoursePage = location.pathname.startsWith('/learn/course') || ['/learn/leaderboard', '/learn/resources'].includes(location.pathname);
 
   const handleSignOut = async () => {
     try {

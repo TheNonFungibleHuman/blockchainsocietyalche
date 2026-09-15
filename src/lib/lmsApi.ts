@@ -71,6 +71,18 @@ interface QuizStateRow {
   attempts?: Record<string, number> | null;
 }
 
+export interface CourseQuizState {
+  currentQ: number;
+  attempts: Record<string, number>;
+  finished: boolean;
+}
+
+export interface CourseProgress {
+  completedPages: string[];
+  completedModules: string[];
+  quizStates: Record<string, CourseQuizState>;
+}
+
 function toEpochMillis(value: string | null): number | undefined {
   if (!value) return undefined;
   const time = new Date(value).getTime();
@@ -79,6 +91,17 @@ function toEpochMillis(value: string | null): number | undefined {
 
 function toCompletedPageId(row: CourseProgressRow) {
   return row.module_id === INTRO_MODULE_ID ? row.page_id : `${row.module_id}-${row.page_id}`;
+}
+
+function mapQuizStateRows(rows: QuizStateRow[]): Record<string, CourseQuizState> {
+  return rows.reduce<Record<string, CourseQuizState>>((acc, row) => {
+    acc[row.module_id] = {
+      currentQ: row.current_question_index,
+      attempts: row.attempts || {},
+      finished: row.finished,
+    };
+    return acc;
+  }, {});
 }
 
 function mapProfile(row: ProfileRow, completedPages: string[], completedModules: string[], quizStates: Record<string, unknown>): UserProfile {
@@ -171,16 +194,39 @@ export async function getCurrentProfile(userId: string): Promise<UserProfile | n
 
   const completedPages = ((progressResult.data || []) as CourseProgressRow[]).map(toCompletedPageId);
   const completedModules = ((modulesResult.data || []) as ModuleProgressRow[]).map(row => row.module_id);
-  const quizStates = ((quizResult.data || []) as QuizStateRow[]).reduce<Record<string, unknown>>((acc, row) => {
-    acc[row.module_id] = {
-      currentQ: row.current_question_index,
-      attempts: row.attempts || {},
-      finished: row.finished,
-    };
-    return acc;
-  }, {});
+  const quizStates = mapQuizStateRows((quizResult.data || []) as QuizStateRow[]);
 
   return mapProfile(profileResult.data as ProfileRow, completedPages, completedModules, quizStates);
+}
+
+export async function getCourseProgress(userId: string, courseId: string): Promise<CourseProgress> {
+  const [progressResult, modulesResult, quizResult] = await Promise.all([
+    supabase
+      .from('course_progress')
+      .select('module_id, page_id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId),
+    supabase
+      .from('module_progress')
+      .select('module_id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId),
+    supabase
+      .from('quiz_state')
+      .select('module_id, current_question_index, finished, attempts')
+      .eq('user_id', userId)
+      .eq('course_id', courseId),
+  ]);
+
+  if (progressResult.error) throw progressResult.error;
+  if (modulesResult.error) throw modulesResult.error;
+  if (quizResult.error) throw quizResult.error;
+
+  const completedPages = ((progressResult.data || []) as CourseProgressRow[]).map(toCompletedPageId);
+  const completedModules = ((modulesResult.data || []) as ModuleProgressRow[]).map(row => row.module_id);
+  const quizStates = mapQuizStateRows((quizResult.data || []) as QuizStateRow[]);
+
+  return { completedPages, completedModules, quizStates };
 }
 
 export async function updateProfile(displayName: string, country: string) {
@@ -193,9 +239,9 @@ export async function updateProfile(displayName: string, country: string) {
   return data;
 }
 
-export async function completePage(moduleId: string | null, pageId: string) {
+export async function completePage(courseId: string, moduleId: string | null, pageId: string) {
   const { data, error } = await supabase.rpc('complete_page', {
-    p_course_id: COURSE_ID,
+    p_course_id: courseId,
     p_module_id: moduleId || INTRO_MODULE_ID,
     p_page_id: pageId,
   });
@@ -210,11 +256,12 @@ export async function markWelcomeWatched() {
 }
 
 export async function saveQuizState(
+  courseId: string,
   moduleId: string,
   state: { currentQ?: number; attempts?: Record<string, number>; finished?: boolean },
 ) {
   const { error } = await supabase.rpc('save_quiz_state', {
-    p_course_id: COURSE_ID,
+    p_course_id: courseId,
     p_module_id: moduleId,
     p_current_question_index: state.currentQ ?? 0,
     p_attempts: state.attempts || {},
@@ -224,9 +271,9 @@ export async function saveQuizState(
   if (error) throw error;
 }
 
-export async function finishQuiz(moduleId: string) {
+export async function finishQuiz(courseId: string, moduleId: string) {
   const { data, error } = await supabase.rpc('finish_quiz', {
-    p_course_id: COURSE_ID,
+    p_course_id: courseId,
     p_module_id: moduleId,
   });
 
